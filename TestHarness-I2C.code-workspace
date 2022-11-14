@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"path": "i2c-transmitter"
+		},
+		{
+			"path": "i2c-receiver"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "cpp",
+			"deque": "cpp",
+			"forward_list": "cpp",
+			"list": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"vector": "cpp",
+			"string_view": "cpp",
+			"initializer_list": "cpp",
+			"*.tcc": "cpp",
+			"optional": "cpp",
+			"fstream": "cpp",
+			"iomanip": "cpp",
+			"ios": "cpp",
+			"istream": "cpp",
+			"limits": "cpp",
+			"mutex": "cpp",
+			"ostream": "cpp",
+			"sstream": "cpp",
+			"streambuf": "cpp",
+			"thread": "cpp",
+			"type_traits": "cpp",
+			"tuple": "cpp",
+			"cmath": "cpp",
+			"*.old": "cpp",
+			"random": "cpp"
+		}
+	}
+}

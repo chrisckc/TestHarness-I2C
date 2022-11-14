@@ -1,0 +1,139 @@
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000219
+LoopRate: 0642475
+receiveRate: 0000010
+dr1Count: 0002063 dr1SuccessCount: 0002042 dr1FailureCount: 0000021
+dr2Count: 0002063 dr2SuccessCount: 0001979 dr2FailureCount: 0000084
+dr1FailureRate:   1.0179350 percent
+dr2FailureRate:   4.0717402 percent
+
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Error!!, received: 46 expected: 48 bytes!
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+
+
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000269
+LoopRate: 0642471
+receiveRate: 0000010
+dr1Count: 0002558 dr1SuccessCount: 0002530 dr1FailureCount: 0000028
+dr2Count: 0002558 dr2SuccessCount: 0002453 dr2FailureCount: 0000105
+dr1FailureRate:   1.0946052 percent
+dr2FailureRate:   4.1047692 percent
+
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+dr1: Success, received: 84 bytes                 | dr2: Error!!, received: 47 expected: 48 bytes!
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+
+
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000141
+LoopRate: 0612408
+receiveRate: 0000010
+dr1Count: 0001328 dr1SuccessCount: 0001306 dr1FailureCount: 0000022
+dr2Count: 0001328 dr2SuccessCount: 0001317 dr2FailureCount: 0000011
+dr1FailureRate:   1.6566265 percent
+dr2FailureRate:   0.8283132 percent
+
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Error!!, received: 47 expected: 48 bytes!
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,0.0,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Error!!, received: 83 expected: 84 bytes! | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,0.0,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+dr1: Success, received: 84 bytes                 | dr2: Success, received: 48 bytes
+decodedFloatValues1: 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+decodedFloatValues2: 3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,
+
+
+
+
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000807
+LoopRate: 0612485
+receiveRate: 0000010
+dr1Count: 0007882 dr1SuccessCount: 0007833 dr1FailureCount: 0000049
+dr2Count: 0007882 dr2SuccessCount: 0007846 dr2FailureCount: 0000036
+dr1FailureRate:   0.6216697 percent
+dr2FailureRate:   0.4567369 percent
+
+
+400KHz with 50uS gap between sends
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000220
+LoopRate: 0612522
+receiveRate: 0000010
+dr1Count: 0002076 dr1SuccessCount: 0002064 dr1FailureCount: 0000012
+dr2Count: 0002076 dr2SuccessCount: 0002050 dr2FailureCount: 0000026
+dr1FailureRate:   0.5780347 percent
+dr2FailureRate:   1.2524085 percent
+
+400KHz with 1000uS gap between sends
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0000286
+LoopRate: 0612837
+receiveRate: 0000009
+dr1Count: 0002726 dr1SuccessCount: 0002705 dr1FailureCount: 0000021
+dr2Count: 0002726 dr2SuccessCount: 0002700 dr2FailureCount: 0000026
+dr1FailureRate:   0.7703595 percent
+dr2FailureRate:   0.9537784 percent
+
+
+100KHz  with 1000uS gap between sends
+Pi Pico i2c receiver:
+Ready to Receive Data...
+Seconds: 0004392
+LoopRate: 0491125
+receiveRate: 0000010
+dr1Count: 0043378 dr1SuccessCount: 0043378 dr1FailureCount: 0000000
+dr2Count: 0043378 dr2SuccessCount: 0043375 dr2FailureCount: 0000003
+dr1FailureRate:   0.0000000 percent
+dr2FailureRate:   0.0069159 percent
+
+
+400KHz  with 1000uS gap between sends
+dr1Count: 0066883 dr1SuccessCount: 0066144 dr1FailureCount: 0000739  1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,
+dr2Count: 0066883 dr2SuccessCount: 0066367 dr2FailureCount: 0000516
+dr1FailureRate:   1.1049145 percent
+dr2FailureRate:   0.7714965 percent
