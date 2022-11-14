@@ -188,7 +188,7 @@ void loop() {
         sendRate = sendCounter - lastSendCount;
         lastSendCount = sendCounter;
         if (!PRINT_DEBUG_DATA) Serial.printf("\e[H"); // move to the home position, at the upper left of the screen
-        Serial.printf("\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nSeconds: %07d\r\n", lastSecondMillis / 1000);
+        Serial.printf("\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nSeconds: %07lu\r\n", lastSecondMillis / 1000);
         Serial.printf("LoopRate: %07d\r\n", lastLoopCounter); // how many loops per second
         Serial.printf("sendRate: %07d\r\n\r\n", sendRate); // how many loops per second
 
