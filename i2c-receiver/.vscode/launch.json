@@ -12,35 +12,32 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/pico-mbed/firmware.elf",
-            "projectEnvName": "pico-mbed",
-            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/teensy40/firmware.elf",
+            "projectEnvName": "teensy40",
+            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi@1.50401.190816/bin",
             "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "/Users/chrisclaxton/.platformio/platforms/raspberrypi/misc/svd/rp2040.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
-                "task": "Pre-Debug (pico-mbed)"
+                "task": "Pre-Debug (teensy40)"
             }
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/pico-mbed/firmware.elf",
-            "projectEnvName": "pico-mbed",
-            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "/Users/chrisclaxton/.platformio/platforms/raspberrypi/misc/svd/rp2040.svd"
+            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/teensy40/firmware.elf",
+            "projectEnvName": "teensy40",
+            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi@1.50401.190816/bin",
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/pico-mbed/firmware.elf",
-            "projectEnvName": "pico-mbed",
-            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "executable": "/Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/i2c-receiver/.pio/build/teensy40/firmware.elf",
+            "projectEnvName": "teensy40",
+            "toolchainBinDir": "/Users/chrisclaxton/.platformio/packages/toolchain-gccarmnoneeabi@1.50401.190816/bin",
             "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "/Users/chrisclaxton/.platformio/platforms/raspberrypi/misc/svd/rp2040.svd",
             "loadMode": "manual"
         }
     ]
