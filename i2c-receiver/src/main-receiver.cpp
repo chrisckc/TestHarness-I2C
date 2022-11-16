@@ -9,7 +9,7 @@
 #ifdef ARDUINO_ARCH_MBED
     #define SERIAL_PRINTF(...) printf(__VA_ARGS__)
 #else
-    #define SERIAL_PRINTF(...) Serial.printf(__VA_ARGS__)
+    #define SERIAL_PRINTF(...) Serial.print(__VA_ARGS__)
 #endif
 
 // Debug Signal outputs, to allow us to observe any error conditions on the scope
@@ -31,12 +31,13 @@
 bool ledState = false;
 int debugPinInitialState = HIGH;
 
-volatile unsigned int  dataReceivedCounter = 0, dataReceived1Counter = 0, dataReceived1Bytes = 0, dataReceived2Counter = 0, dataReceived2Bytes = 0;
-volatile bool dataReceived1 = false, dataReceived2 = false, allDataReceived = false;
+volatile unsigned int  dataReceivedCounter = 0, lastDataReceivedBytes = 0, lastByteCounter = 0;
+volatile unsigned int dataReceived1Counter = 0, dataReceived1Bytes = 0, dataReceived2Counter = 0, dataReceived2Bytes = 0;
+volatile bool dataReceived = false, dataReceived1 = false, dataReceived2 = false, allDataReceived = false;
 unsigned int receiveRate = 0, lastDataReceivedCounter = 0;
 unsigned int dataReceived1SuccessCount = 0, dataReceived2SuccessCount = 0;
 unsigned int dataReceived1FailureCount = 0, dataReceived2FailureCount = 0;
-unsigned int dataNotAvailable1Count = 0, dataNotAvailable2Count = 0;
+unsigned int dataNotAvailableCount = 0, dataNotAvailable1Count = 0, dataNotAvailable2Count = 0;
 bool dataDecoded1 = false, dataDecoded2 = false;
 
 // Code from the transmitter sketch, used for verification
@@ -56,6 +57,58 @@ static_assert(sizeof(float) == 4, "float size is expected to be 4 bytes");
 float decodedFloatValues1[DATA1_SIZE / 4]; // 21 floats
 float decodedFloatValues2[DATA2_SIZE / 4]; // 12 floats
 
+
+
+#ifdef ARDUINO_ARCH_MBED
+// Modifed version of onReceive interrupt Handler for debugging issues with ArduinoCore-MBED
+// The transmission rate needs to be dropped to no more than 3 transmission pairs per second as this is all that the MBED RTOS can handle
+// The data from both of the i2c transmissions wou;d be expected to be available here due to the large delay between end of transmission and this interrupt firing (264mS)
+// This is only being fired once despite there being 2 separate transmissions, with the second being 1mS after the other, this is much less than the interrupt response time.
+void recv(int byteCount) {
+    digitalWrite(DEBUG_PIN2, LOW); // signal the start of the interrupt
+    digitalWrite(LED_BUILTIN, HIGH);
+    //if (byteCount > RECV_BUFF_MAX_SIZE) byteCount = RECV_BUFF_MAX_SIZE;
+    dataReceived = true;
+    dataReceivedCounter++;
+    lastDataReceivedBytes = byteCount;
+    int i = 0;
+    while (Wire.available() && i < DATA1_SIZE + DATA2_SIZE) {
+        int data = Wire.read(); // returns -1 if no data is available
+        if (data > -1) {
+            if (i < DATA1_SIZE) {
+                receiveBuff1[i] = data; // read into data1 buffer
+            } else {
+                receiveBuff2[i - DATA1_SIZE] = data; // read into data2 buffer
+            }
+        } else {
+            dataNotAvailableCount++;
+        }
+        i++;
+    }
+    lastByteCounter = i;
+    if (i >= DATA1_SIZE) {
+        dataReceived1Counter++;
+        dataReceived1Bytes = DATA1_SIZE; // can't tell how many of the bytes were from the data1 transmission
+        dataReceived1 = true;
+        allDataReceived = false; // Data1 arrives first
+    }
+    if (i >= DATA1_SIZE + DATA2_SIZE) {
+        dataReceived2Counter++;
+        dataReceived2Bytes = abs(byteCount - DATA1_SIZE); // sometime the bytes are less than DATA1_SIZE
+        dataReceived2 = true;
+        allDataReceived = true;
+    }
+
+    while (Wire.available()) {
+        Wire.read(); // clear buffer of any excess data
+    }
+    delayMicroseconds(10);          // Make it easier to see DEBUG_PIN on the scope
+    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(DEBUG_PIN2, HIGH); // signal the end of the interrupt
+}
+#else
+
+// onReceive interrupt Handler
 // Called when the I2C slave gets written to
 // This code takes 36 uS for 84 bytes, 21 uS for 48 bytes
 // delay from end of transmission from master to interrupt firing is about 230 uS
@@ -64,7 +117,9 @@ void recv(int byteCount) {
     digitalWrite(DEBUG_PIN2, LOW); // signal the start of the interrupt
     digitalWrite(LED_BUILTIN, HIGH);
     //if (byteCount > RECV_BUFF_MAX_SIZE) byteCount = RECV_BUFF_MAX_SIZE;
+    dataReceived = true;
     dataReceivedCounter++;
+    lastDataReceivedBytes = byteCount;
     int i;
     if (byteCount > DATA2_SIZE) { // New checking method for data1, as data1 is somewhat larger than data2, allows capture if less than expected size
         allDataReceived = false; // Data1 arrives first
@@ -93,10 +148,12 @@ void recv(int byteCount) {
         dataReceived2 = true;
         allDataReceived = true;
     }
+    lastByteCounter = i;
     delayMicroseconds(10);          // Make it easier to see DEBUG_PIN on the scope
     digitalWrite(LED_BUILTIN, LOW);
     digitalWrite(DEBUG_PIN2, HIGH); // signal the end of the interrupt
 }
+#endif
 
 // Called when the I2C slave is read from
 void req() {
@@ -142,9 +199,10 @@ void setup() {
     pinMode(DEBUG_PIN5, OUTPUT);
     digitalWrite(DEBUG_PIN5, debugPinInitialState);
     delay(5000);
-    Serial.println("Pi Pico i2c receiver:");
-    Serial.println("Ready to Receive Data...");
+    SERIAL_PRINTF("Pi Pico i2c receiver:\r\n");
+    SERIAL_PRINTF("Ready to Receive Data...\r\'n");
     if (dataReceivedCounter > 0) {
+        dataReceived = false;
         dataReceivedCounter = 0;
     }
     if (dataReceived1Counter > 0) {
@@ -187,36 +245,36 @@ void decodeData(char *byteArrPointer, unsigned int dataReceivedBytes, float *flo
     if (PRINT_DEBUG_DATA) SERIAL_PRINTF("end: %d \r\n\r\n", i);
 }
 
-void verifyData1(int counter) {
-    Serial.print("verifying decodedFloatValues1:                                                             \r\n");
+void verifyData1(int counter1) {
+    SERIAL_PRINTF("dr1Count:%d Verifying decodedFloatValues1:                                                             \r\n", counter1);
     for (int i = 0; i < TEST_DATA1_SIZE; i++) {
         if (testData1[i] != decodedFloatValues1[i]) {
-            SERIAL_PRINTF("                                                      counter:%d floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter, i, testData1[i], decodedFloatValues1[i]);
+            SERIAL_PRINTF("                                                      dr1Count:%d floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter1, i, testData1[i], decodedFloatValues1[i]);
         }
     }
-    //Serial.print("                                                                                                         \r\n");
+    //SERIAL_PRINTF("                                                                                                         \r\n");
 }
 
-void verifyData2(int counter) {
-    Serial.print("verifying decodedFloatValues2:                                                             \r\n");
+void verifyData2(int counter2) {
+    SERIAL_PRINTF("dr2Count:%d Verifying decodedFloatValues2:                                                             \r\n", counter2);
     for (int i = 0; i < TEST_DATA2_SIZE; i++) {
         if (testData2[i] != decodedFloatValues2[i]) {
-            SERIAL_PRINTF("                                                      counter:%d floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter, i, testData2[i], decodedFloatValues2[i]);
+            SERIAL_PRINTF("                                                      dr2Count:%d floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter2, i, testData2[i], decodedFloatValues2[i]);
         }
     }
-    //Serial.print("                                                                                                         \r\n");
+    //SERIAL_PRINTF("                                                                                                         \r\n");
 }
 
-void printData() {
-    Serial.print("decodedFloatValues1:                                                        \r\n");
+void printData(int counter1, int counter2) {
+    SERIAL_PRINTF("dr1Count:%d decodedFloatValues1:                                                        \r\n", counter1);
     for (int i = 0; i < DATA1_SIZE / 4; i++) {
         SERIAL_PRINTF("%3.1f,", decodedFloatValues1[i]);
     }
-    Serial.print("\r\ndecodedFloatValues2:                                                        \r\n");
+    SERIAL_PRINTF("\r\ndr2Count:%d decodedFloatValues2:                                                        \r\n", counter2);
     for (int i = 0; i < DATA2_SIZE / 4; i++) {
         SERIAL_PRINTF("%3.1f,", decodedFloatValues2[i]);
     }
-    Serial.print("\r\n                                                                            \r\n");
+    SERIAL_PRINTF("\r\n                                                                            \r\n");
 }
 
 void loop() {
@@ -224,16 +282,22 @@ void loop() {
     static unsigned int loopCounter = 0, lastLoopCounter = 0;
     loopCounter++;
     if (loopCounter > 1) {
+        if (dataReceived) {
+            #ifdef ARDUINO_ARCH_MBED
+                if (SERIAL_DURING_I2C) SERIAL_PRINTF("\r\ndrCount: %07u lastDataReceivedBytes: %u  lastByteCounter: %u          \r\n", dataReceivedCounter, lastDataReceivedBytes, lastByteCounter);
+            #endif
+            dataReceived = false; // Reset the Data Received flag after it has been collected
+        }
         if (dataReceived1 || dataReceived2) {
             digitalWrite(DEBUG_PIN3, LOW); // signal the start of the work for debug purposes
             if (dataReceived1) {
                 if (dataReceived1Bytes == DATA1_SIZE) {
                     dataReceived1SuccessCount++;
-                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: Success, received: %u bytes                 | ", dataReceived1Bytes);
+                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: dr1Count: %07u Success, received: %u bytes                 | ", dataReceived1Counter, dataReceived1Bytes);
                 } else {
                     dataReceived1FailureCount++;
                     digitalWrite(DEBUG_PIN4, LOW); // debug purposes
-                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: Error!!, received: %u expected: %u bytes! | ", dataReceived1Bytes, DATA1_SIZE);
+                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: dr1Count: %07u Error!!, received: %u expected: %u bytes! | ", dataReceived1Counter, dataReceived1Bytes, DATA1_SIZE);
                     delayMicroseconds(10);          // Make it easier to see DEBUG_PIN on the scope
                     digitalWrite(DEBUG_PIN4, HIGH); // debug purposes
                 }
@@ -249,18 +313,18 @@ void loop() {
             if (dataReceived2 && !dataReceived1) {
                 if (dataReceived2Bytes == DATA2_SIZE) {
                     dataReceived2SuccessCount++;
-                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: Success, received: %u bytes                 ", dataReceived2Bytes);
+                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: dr2Count: %07u Success, received: %u bytes                 ", dataReceived2Counter, dataReceived2Bytes);
                 } else {
                     dataReceived2FailureCount++;
                     digitalWrite(DEBUG_PIN4, LOW); // debug purposes
-                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: Error!!, received: %u expected: %u bytes! ", dataReceived2Bytes, DATA2_SIZE);
+                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: dr2Count: %07u Error!!, received: %u expected: %u bytes! ", dataReceived2Counter, dataReceived2Bytes, DATA2_SIZE);
                     delayMicroseconds(10);          // Make it easier to see DEBUG_PIN on the scope
                     digitalWrite(DEBUG_PIN4, HIGH); // debug purposes
                 }
                 if (dataNotAvailable2Count > 0) {
                     if (SERIAL_DURING_I2C) SERIAL_PRINTF("  Wire.read() returned no data! dataNotAvailable2Count: %u ", dataNotAvailable2Count);
                 }
-                Serial.println();
+                SERIAL_PRINTF("\r\n");
                 decodeData(receiveBuff2, dataReceived2Bytes, decodedFloatValues2);
                 dataDecoded2 = true;
                 clearReceiveBuffer2();
@@ -269,25 +333,28 @@ void loop() {
             }
             digitalWrite(DEBUG_PIN3, HIGH); // signal the end of the work for debug purposes
         }
-
+        #ifdef ARDUINO_ARCH_MBED
+        if (dataDecoded1 || dataDecoded2) {
+        #else
         if (allDataReceived && dataDecoded1 && dataDecoded2) {
+        #endif
             delay(1);                      // 1mS delay here to make it easier to see DEBUG_PIN on the scope
             digitalWrite(DEBUG_PIN3, LOW); // debug purposes
             if (dataReceived1Bytes == DATA1_SIZE) {
-                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: Success, received: %u bytes                 | ", dataReceived1Bytes);
+                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: dr1Count: %07u Success, received: %u bytes                 | ", dataReceived1Counter, dataReceived1Bytes);
             } else {
-                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: Error!!, received: %u expected: %u bytes! | ", dataReceived1Bytes, DATA1_SIZE);
+                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr1: dr1Count: %07u Error!!, received: %u expected: %u bytes! | ", dataReceived1Counter, dataReceived1Bytes, DATA1_SIZE);
             }
             if (dataReceived2Bytes == DATA2_SIZE) {
-                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: Success, received: %u bytes                 \r\n", dataReceived2Bytes);
+                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: dr2Count: %07u Success, received: %u bytes                 \r\n", dataReceived2Counter, dataReceived2Bytes);
             } else {
-                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: Error!!, received: %u expected: %u bytes! \r\n", dataReceived2Bytes, DATA2_SIZE);
+                if (!SERIAL_DURING_I2C) SERIAL_PRINTF("dr2: dr2Count: %07u Error!!, received: %u expected: %u bytes! \r\n", dataReceived2Counter, dataReceived2Bytes, DATA2_SIZE);
             }
-            verifyData1(dataReceived1Counter);
-            verifyData2(dataReceived2Counter);
-            if (PRINT_DEBUG_DATA) printData();
-            //printData();
-            Serial.print("                                                                                    \r\n");
+            if (dataDecoded1) verifyData1(dataReceived1Counter);
+            if (dataDecoded2) verifyData2(dataReceived2Counter);
+            if (PRINT_DEBUG_DATA) printData(dataReceived1Counter, dataReceived2Counter);
+            //printData(dataReceived1Counter, dataReceived2Counter);
+            SERIAL_PRINTF("                                                                                    \r\n");
             clearFloatArray1();
             clearFloatArray2();
             dataDecoded1 = false;
@@ -305,12 +372,12 @@ void loop() {
         lastDataReceivedCounter = dataReceived1Counter;
         delay(1);                      // 1mS delay here to make it easier to see DEBUG_PIN on the scope
         digitalWrite(DEBUG_PIN3, LOW); // debug purposes
-        Serial.print("                                                                              \r\n");
-        Serial.print("                                                                              \r\n");
-        if (!PRINT_DEBUG_DATA) Serial.print("\e[H"); // move to the home position, at the upper left of the screen
-        Serial.print("                                                                              \r\n");
-        Serial.print("                                                                              \r\n");
-        SERIAL_PRINTF("Seconds: %07u  \r\n", lastSecondMillis / 1000);
+        #ifndef ARDUINO_ARCH_MBED
+            if (!PRINT_DEBUG_DATA) SERIAL_PRINTF("\e[H"); // move to the home position, at the upper left of the screen
+            SERIAL_PRINTF("                                                                              \r\n");
+        #endif
+        SERIAL_PRINTF("                                                                              \r\n");
+        SERIAL_PRINTF("Seconds: %07lu  \r\n", lastSecondMillis / 1000);
         SERIAL_PRINTF("LoopRate: %07u  \r\n", lastLoopCounter); // how many loops per second
         SERIAL_PRINTF("receiveRate: %07u  \r\n", receiveRate);  // how many data transmission pairs per second
         SERIAL_PRINTF("drCount: %07u  \r\n", dataReceivedCounter);  // total transmissions received
@@ -318,7 +385,7 @@ void loop() {
         SERIAL_PRINTF("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount);
         SERIAL_PRINTF("dr1FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived1FailureCount / (dataReceived1Counter > 0 ? dataReceived1Counter : 1));
         SERIAL_PRINTF("dr2FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived2FailureCount / (dataReceived2Counter > 0 ? dataReceived2Counter : 1));
-        Serial.print("\r\n                                                                              \r\n");
+        SERIAL_PRINTF("                                                                              \r\n");
         digitalWrite(DEBUG_PIN3, HIGH); // debug purposes
     }
 }

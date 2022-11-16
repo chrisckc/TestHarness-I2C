@@ -165,6 +165,7 @@ void sendTestData() {
 
 void loop() {
     static unsigned long lastSecondMillis = 0;
+    static unsigned long lastHalfSecondMillis = 0;
     static unsigned long lastTenthSecondMillis = 0;
     static unsigned long lastFiftiethSecondMillis = 0;
     static unsigned int loopCounter = 0, lastLoopCounter = 0;
@@ -179,8 +180,16 @@ void loop() {
     // }
 
     //Send data 10 times per second
-    if (millis() > lastTenthSecondMillis + 100) {
-      lastTenthSecondMillis = millis();
+    // if (millis() > lastTenthSecondMillis + 100) {
+    //   lastTenthSecondMillis = millis();
+    //   digitalWrite(LED_BUILTIN, ledState);
+    //   ledState = !ledState;
+    //   sendTestData();
+    // }
+
+    // Send data twice per second
+    if (millis() > lastHalfSecondMillis + 500) {
+      lastHalfSecondMillis = millis();
       digitalWrite(LED_BUILTIN, ledState);
       ledState = !ledState;
       sendTestData();
