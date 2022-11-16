@@ -9,7 +9,7 @@
 #ifdef ARDUINO_ARCH_MBED
     #define SERIAL_PRINTF(...) printf(__VA_ARGS__)
 #else
-    #define SERIAL_PRINTF(...) Serial.print(__VA_ARGS__)
+    #define SERIAL_PRINTF(...) Serial.printf(__VA_ARGS__)
 #endif
 
 // Debug Signal outputs, to allow us to observe any error conditions on the scope
@@ -246,35 +246,35 @@ void decodeData(char *byteArrPointer, unsigned int dataReceivedBytes, float *flo
 }
 
 void verifyData1(int counter1) {
-    SERIAL_PRINTF("dr1Count:%d Verifying decodedFloatValues1:                                                             \r\n", counter1);
+    SERIAL_PRINTF("dr1Count:%d Verifying decodedFloatValues1:                                                                                 \r\n", counter1);
     for (int i = 0; i < TEST_DATA1_SIZE; i++) {
         if (testData1[i] != decodedFloatValues1[i]) {
-            SERIAL_PRINTF("                                                      dr1Count:%d floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter1, i, testData1[i], decodedFloatValues1[i]);
+            SERIAL_PRINTF("                                                                                        floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter1, i, testData1[i], decodedFloatValues1[i]);
         }
     }
     //SERIAL_PRINTF("                                                                                                         \r\n");
 }
 
 void verifyData2(int counter2) {
-    SERIAL_PRINTF("dr2Count:%d Verifying decodedFloatValues2:                                                             \r\n", counter2);
+    SERIAL_PRINTF("dr2Count:%d Verifying decodedFloatValues2:                                                                                 \r\n", counter2);
     for (int i = 0; i < TEST_DATA2_SIZE; i++) {
         if (testData2[i] != decodedFloatValues2[i]) {
-            SERIAL_PRINTF("                                                      dr2Count:%d floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter2, i, testData2[i], decodedFloatValues2[i]);
+            SERIAL_PRINTF("                                                                                        floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter2, i, testData2[i], decodedFloatValues2[i]);
         }
     }
     //SERIAL_PRINTF("                                                                                                         \r\n");
 }
 
 void printData(int counter1, int counter2) {
-    SERIAL_PRINTF("dr1Count:%d decodedFloatValues1:                                                        \r\n", counter1);
+    SERIAL_PRINTF("dr1Count:%d decodedFloatValues1:                                                                            \r\n", counter1);
     for (int i = 0; i < DATA1_SIZE / 4; i++) {
         SERIAL_PRINTF("%3.1f,", decodedFloatValues1[i]);
     }
-    SERIAL_PRINTF("\r\ndr2Count:%d decodedFloatValues2:                                                        \r\n", counter2);
+    SERIAL_PRINTF("\r\ndr2Count:%d decodedFloatValues2:                                                                            \r\n", counter2);
     for (int i = 0; i < DATA2_SIZE / 4; i++) {
         SERIAL_PRINTF("%3.1f,", decodedFloatValues2[i]);
     }
-    SERIAL_PRINTF("\r\n                                                                            \r\n");
+    SERIAL_PRINTF("\r\n                                                                                                \r\n");
 }
 
 void loop() {
@@ -302,7 +302,7 @@ void loop() {
                     digitalWrite(DEBUG_PIN4, HIGH); // debug purposes
                 }
                 if (dataNotAvailable1Count > 0) {
-                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("                                                   Wire.read() returned no data! dataNotAvailable1Count: %u  | ", dataNotAvailable1Count);
+                    if (SERIAL_DURING_I2C) SERIAL_PRINTF("                                                                      Wire.read() returned no data! dataNotAvailable1Count: %u  | ", dataNotAvailable1Count);
                 }
                 decodeData(receiveBuff1, dataReceived1Bytes, decodedFloatValues1);
                 dataDecoded1 = true;
@@ -373,10 +373,12 @@ void loop() {
         delay(1);                      // 1mS delay here to make it easier to see DEBUG_PIN on the scope
         digitalWrite(DEBUG_PIN3, LOW); // debug purposes
         #ifndef ARDUINO_ARCH_MBED
+            if (!PRINT_DEBUG_DATA) SERIAL_PRINTF("                                                                                             \r\n");
+            if (!PRINT_DEBUG_DATA) SERIAL_PRINTF("                                                                                             \r\n");
             if (!PRINT_DEBUG_DATA) SERIAL_PRINTF("\e[H"); // move to the home position, at the upper left of the screen
-            SERIAL_PRINTF("                                                                              \r\n");
+            SERIAL_PRINTF("                                                                                             \r\n");
         #endif
-        SERIAL_PRINTF("                                                                              \r\n");
+        SERIAL_PRINTF("                                                                                             \r\n");
         SERIAL_PRINTF("Seconds: %07lu  \r\n", lastSecondMillis / 1000);
         SERIAL_PRINTF("LoopRate: %07u  \r\n", lastLoopCounter); // how many loops per second
         SERIAL_PRINTF("receiveRate: %07u  \r\n", receiveRate);  // how many data transmission pairs per second
@@ -385,7 +387,7 @@ void loop() {
         SERIAL_PRINTF("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount);
         SERIAL_PRINTF("dr1FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived1FailureCount / (dataReceived1Counter > 0 ? dataReceived1Counter : 1));
         SERIAL_PRINTF("dr2FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived2FailureCount / (dataReceived2Counter > 0 ? dataReceived2Counter : 1));
-        SERIAL_PRINTF("                                                                              \r\n");
+        SERIAL_PRINTF("                                                                                             \r\n");
         digitalWrite(DEBUG_PIN3, HIGH); // debug purposes
     }
 }
