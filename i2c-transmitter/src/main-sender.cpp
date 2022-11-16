@@ -60,6 +60,11 @@ void setup() {
     while (!Serial && millis() < 5000);
     pinMode(LED_BUILTIN, OUTPUT);
 
+    #ifdef ARDUINO_RASPBERRY_PI_PICO
+        pinMode(23, OUTPUT);
+        digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+    #endif
+
     // Be sure to use pins labeled I2C0 for Wire and I2C1 for Wire1 on the pinout diagram for your board, otherwise it won’t work.
     // For Wire (I2C0 on the Pico) default pins: PIN_WIRE0_SDA (4u) PIN_WIRE0_SCL  (5u)
     // For Wire1 (I2C1 on the Pico) default pins: PIN_WIRE1_SDA (26u), PIN_WIRE1_SCL (27u)
@@ -68,7 +73,7 @@ void setup() {
     Wire1.setSCL(I2C_SCL);
     // Default clock is 100 KHz (with 1k pullup resistors, actually runs at 95.238 KHz)
     Wire1.setClock(400000); // Set Clock to 400KHz (Fast Mode) (with 1k pullup resistors, actually runs at 365 KHz)
-    // Wire1.setClock(1000000); // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
+    //Wire1.setClock(1000000); // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
     Wire1.begin();
 
     // Setup Debug output pins

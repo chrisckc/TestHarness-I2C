@@ -110,6 +110,11 @@ void setup() {
 
     pinMode(LED_BUILTIN, OUTPUT);
 
+    #ifdef ARDUINO_RASPBERRY_PI_PICO
+        pinMode(23, OUTPUT);
+        digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+    #endif
+
     // Be sure to use pins labeled I2C0 for Wire and I2C1 for Wire1 on the pinout diagram for your board, otherwise it won’t work.
     // For Wire (I2C0 on the Pico) default pins: PIN_WIRE0_SDA (4u) PIN_WIRE0_SCL  (5u)
     // For Wire1 (I2C1 on the Pico) default pins: PIN_WIRE1_SDA (26u), PIN_WIRE1_SCL (27u)
@@ -302,17 +307,17 @@ void loop() {
         digitalWrite(DEBUG_PIN3, LOW); // debug purposes
         Serial.print("                                                                              \r\n");
         Serial.print("                                                                              \r\n");
-        if (!PRINT_DEBUG_DATA) Serial.printf("\e[H"); // move to the home position, at the upper left of the screen
+        if (!PRINT_DEBUG_DATA) Serial.print("\e[H"); // move to the home position, at the upper left of the screen
         Serial.print("                                                                              \r\n");
         Serial.print("                                                                              \r\n");
-        Serial.printf("Seconds: %07u  \r\n", lastSecondMillis / 1000);
-        Serial.printf("LoopRate: %07u  \r\n", lastLoopCounter); // how many loops per second
-        Serial.printf("receiveRate: %07u  \r\n", receiveRate);  // how many data transmission pairs per second
-        Serial.printf("drCount: %07u  \r\n", dataReceivedCounter);  // total transmissions received
-        Serial.printf("dr1Count: %07u dr1SuccessCount: %07u dr1FailureCount: %07u  \r\n", dataReceived1Counter, dataReceived1SuccessCount, dataReceived1FailureCount);
-        Serial.printf("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount);
-        Serial.printf("dr1FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived1FailureCount / (dataReceived1Counter > 0 ? dataReceived1Counter : 1));
-        Serial.printf("dr2FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived2FailureCount / (dataReceived2Counter > 0 ? dataReceived2Counter : 1));
+        SERIAL_PRINTF("Seconds: %07u  \r\n", lastSecondMillis / 1000);
+        SERIAL_PRINTF("LoopRate: %07u  \r\n", lastLoopCounter); // how many loops per second
+        SERIAL_PRINTF("receiveRate: %07u  \r\n", receiveRate);  // how many data transmission pairs per second
+        SERIAL_PRINTF("drCount: %07u  \r\n", dataReceivedCounter);  // total transmissions received
+        SERIAL_PRINTF("dr1Count: %07u dr1SuccessCount: %07u dr1FailureCount: %07u  \r\n", dataReceived1Counter, dataReceived1SuccessCount, dataReceived1FailureCount);
+        SERIAL_PRINTF("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount);
+        SERIAL_PRINTF("dr1FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived1FailureCount / (dataReceived1Counter > 0 ? dataReceived1Counter : 1));
+        SERIAL_PRINTF("dr2FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived2FailureCount / (dataReceived2Counter > 0 ? dataReceived2Counter : 1));
         Serial.print("\r\n                                                                              \r\n");
         digitalWrite(DEBUG_PIN3, HIGH); // debug purposes
     }
