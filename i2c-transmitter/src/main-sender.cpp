@@ -179,21 +179,21 @@ void loop() {
     //   sendTestData();
     // }
 
-    //Send data 10 times per second
-    // if (millis() > lastTenthSecondMillis + 100) {
-    //   lastTenthSecondMillis = millis();
-    //   digitalWrite(LED_BUILTIN, ledState);
-    //   ledState = !ledState;
-    //   sendTestData();
-    // }
-
-    // Send data twice per second
-    if (millis() > lastHalfSecondMillis + 500) {
-      lastHalfSecondMillis = millis();
+    // Send data 10 times per second
+    if (millis() > lastTenthSecondMillis + 100) {
+      lastTenthSecondMillis = millis();
       digitalWrite(LED_BUILTIN, ledState);
       ledState = !ledState;
       sendTestData();
     }
+
+    // // Send data twice per second
+    // if (millis() > lastHalfSecondMillis + 500) {
+    //   lastHalfSecondMillis = millis();
+    //   digitalWrite(LED_BUILTIN, ledState);
+    //   ledState = !ledState;
+    //   sendTestData();
+    // }
 
     if (millis() > lastSecondMillis + 1000) {
         lastSecondMillis = millis();

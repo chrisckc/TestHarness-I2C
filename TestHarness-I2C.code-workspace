@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "output-check"
+		},
+		{
+			"path": "i2c-receiver-sdk"
 		}
 	],
 	"settings": {
