@@ -4,6 +4,8 @@
 
 #### This is a PlatformIO workspace, the projects are configured to use the Earle Philhower core for the RP2040 (Arduino-Pico) rather than the official Arduino core which uses the Arm MBED RTOS. An RTOS is unsuitable for the use case i was working on when i encountered this issue.
 
+#### UPDATE: This has now also been found to be an issue when using the Pico SDK i2c functions directly.
+
 Intermittent missing data was observed on the receiving Pico during the i2c communications, the error rate seems to depend on the i2c clock speed and other factors such as how much serial communications is taking place and when these communications take place relative to the i2c communications.
 
 When the errors are observed, all of the the data has been confirmed to be correctly sent on the wire by the transmitting Pico, this has been confirmed via an oscilloscope and by the use of it's protocol decoder function.
