@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "Wire.h"
+#include "TwoWire.h"
 #include <i2c_fifo.h>
 
-TwoWire Wire;
-TwoWire Wire1;
+TwoWire TwoWire;
+TwoWire TwoWire1;
 
 //
 // TwoWire

@@ -23,6 +23,8 @@ static inline void finish_transfer(i2c_slave_t *slave) {
     }
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 static void __not_in_flash_func(i2c_slave_irq_handler)(i2c_slave_t *slave) {
     i2c_inst_t *i2c = slave->i2c;
     i2c_hw_t *hw = i2c_get_hw(i2c);
@@ -30,6 +32,15 @@ static void __not_in_flash_func(i2c_slave_irq_handler)(i2c_slave_t *slave) {
     uint32_t intr_stat = hw->intr_stat;
     if (intr_stat == 0) {
         return;
+    }
+    if (intr_stat & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
+        slave->transfer_in_progress = true;
+        slave->handler(i2c, I2C_SLAVE_RECEIVE);
+    }
+    if (intr_stat & I2C_IC_INTR_STAT_R_RD_REQ_BITS) {
+        hw->clr_rd_req;
+        slave->transfer_in_progress = true;
+        slave->handler(i2c, I2C_SLAVE_REQUEST);
     }
     if (intr_stat & I2C_IC_INTR_STAT_R_TX_ABRT_BITS) {
         hw->clr_tx_abrt;
@@ -43,16 +54,8 @@ static void __not_in_flash_func(i2c_slave_irq_handler)(i2c_slave_t *slave) {
         hw->clr_stop_det;
         finish_transfer(slave);
     }
-    if (intr_stat & I2C_IC_INTR_STAT_R_RX_FULL_BITS) {
-        slave->transfer_in_progress = true;
-        slave->handler(i2c, I2C_SLAVE_RECEIVE);
-    }
-    if (intr_stat & I2C_IC_INTR_STAT_R_RD_REQ_BITS) {
-        hw->clr_rd_req;
-        slave->transfer_in_progress = true;
-        slave->handler(i2c, I2C_SLAVE_REQUEST);
-    }
 }
+#pragma GCC pop_options
 
 static void __not_in_flash_func(i2c0_slave_irq_handler)() {
     i2c_slave_irq_handler(&i2c_slaves[0]);

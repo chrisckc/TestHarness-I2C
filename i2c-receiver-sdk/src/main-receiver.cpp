@@ -32,7 +32,7 @@
 static const uint I2C_SLAVE_SDA_PIN = PICO_DEFAULT_I2C_SDA_PIN; // 4
 static const uint I2C_SLAVE_SCL_PIN = PICO_DEFAULT_I2C_SCL_PIN; // 5
 static const uint I2C_SLAVE_ADDRESS = 0x30;
-static const uint I2C_BAUDRATE = 400000; // 100 kHz
+static const uint I2C_BAUDRATE = 400000; // 400 kHz
 
 #define PRINT_DEBUG_DATA false
 #define SERIAL_DURING_I2C true
@@ -46,6 +46,7 @@ volatile bool dataReceived = false, dataReceived1 = false, dataReceived2 = false
 unsigned int receiveRate = 0, lastDataReceivedCounter = 0;
 unsigned int dataReceived1SuccessCount = 0, dataReceived2SuccessCount = 0;
 unsigned int dataReceived1FailureCount = 0, dataReceived2FailureCount = 0;
+unsigned int dataReceived1MissingStartByteCount = 0, dataReceived2MissingStartByteCount = 0;
 unsigned int dataNotAvailableCount = 0, dataNotAvailable1Count = 0, dataNotAvailable2Count = 0;
 bool dataDecoded1 = false, dataDecoded2 = false;
 
@@ -236,7 +237,8 @@ void verifyData1(int counter1) {
     SERIAL_PRINTF("dr1Count:%d Verifying decodedFloatValues1:                                                                                 \r\n", counter1);
     for (int i = 0; i < TEST_DATA1_SIZE; i++) {
         if (testData1[i] != decodedFloatValues1[i]) {
-            SERIAL_PRINTF("                                                                                        floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter1, i, testData1[i], decodedFloatValues1[i]);
+            if (i == 0) dataReceived1MissingStartByteCount++;
+            SERIAL_PRINTF("                                                                                        floatValues1 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", i, testData1[i], decodedFloatValues1[i]);
         }
     }
     //SERIAL_PRINTF("                                                                                                         \r\n");
@@ -246,7 +248,8 @@ void verifyData2(int counter2) {
     SERIAL_PRINTF("dr2Count:%d Verifying decodedFloatValues2:                                                                                 \r\n", counter2);
     for (int i = 0; i < TEST_DATA2_SIZE; i++) {
         if (testData2[i] != decodedFloatValues2[i]) {
-            SERIAL_PRINTF("                                                                                        floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", counter2, i, testData2[i], decodedFloatValues2[i]);
+            if (i == 0) dataReceived2MissingStartByteCount++;
+            SERIAL_PRINTF("                                                                                        floatValues2 Error! Index: %d expectedFloat: %3.1f receivedFloat: %3.1f \r\n", i, testData2[i], decodedFloatValues2[i]);
         }
     }
     //SERIAL_PRINTF("                                                                                                         \r\n");
@@ -370,8 +373,8 @@ void loop() {
         SERIAL_PRINTF("LoopRate: %07u  \r\n", lastLoopCounter); // how many loops per second
         SERIAL_PRINTF("receiveRate: %07u  \r\n", receiveRate);  // how many data transmission pairs per second
         SERIAL_PRINTF("drCount: %07u  \r\n", dataReceivedCounter);  // total transmissions received
-        SERIAL_PRINTF("dr1Count: %07u dr1SuccessCount: %07u dr1FailureCount: %07u  \r\n", dataReceived1Counter, dataReceived1SuccessCount, dataReceived1FailureCount);
-        SERIAL_PRINTF("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount);
+        SERIAL_PRINTF("dr1Count: %07u dr1SuccessCount: %07u dr1FailureCount: %07u  dr1MissingStartByteCount: %07u  \r\n", dataReceived1Counter, dataReceived1SuccessCount, dataReceived1FailureCount, dataReceived1MissingStartByteCount);
+        SERIAL_PRINTF("dr2Count: %07u dr2SuccessCount: %07u dr2FailureCount: %07u  dr2MissingStartByteCount: %07u  \r\n", dataReceived2Counter, dataReceived2SuccessCount, dataReceived2FailureCount, dataReceived2MissingStartByteCount);
         SERIAL_PRINTF("dr1FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived1FailureCount / (dataReceived1Counter > 0 ? dataReceived1Counter : 1));
         SERIAL_PRINTF("dr2FailureRate: %11.7f percent  \r\n", 100.0f * dataReceived2FailureCount / (dataReceived2Counter > 0 ? dataReceived2Counter : 1));
         SERIAL_PRINTF("                                                                                             \r\n");
