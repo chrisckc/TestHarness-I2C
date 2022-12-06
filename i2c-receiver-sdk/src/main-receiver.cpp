@@ -32,7 +32,8 @@
 static const uint I2C_SLAVE_SDA_PIN = PICO_DEFAULT_I2C_SDA_PIN; // 4
 static const uint I2C_SLAVE_SCL_PIN = PICO_DEFAULT_I2C_SCL_PIN; // 5
 static const uint I2C_SLAVE_ADDRESS = 0x30;
-static const uint I2C_BAUDRATE = 400000; // 400 kHz
+//static const uint I2C_BAUDRATE = 400000; // 400 kHz
+static const uint I2C_BAUDRATE = 1000000; // 1 MHz
 
 #define PRINT_DEBUG_DATA false
 #define SERIAL_DURING_I2C true
@@ -149,12 +150,21 @@ void setup() {
     Serial.begin(921600); // Baud rate is ignored because pico has built in USB-UART
     // Wait for Serial Comms or Timeout after 5 seconds
     while (!Serial && millis() < 5000);
+    int startupDelay = 5;
+    for (int i = 1; i <= startupDelay; ++i) {
+        Serial.printf("Waiting %d seconds to start: %d\r\n", startupDelay, i);
+        sleep_ms(1000);
+    }
+    Serial.printf("\e[2J\e[H"); // clear screen and go to home position
+    Serial.printf("rp2040_chip_version: %d \r\n", rp2040_chip_version());
+    Serial.printf("rp2040_rom_version: %d \r\n", rp2040_rom_version());
+    Serial.printf("get_core_num: %u \r\n\r\n", get_core_num());
 
     pinMode(LED_BUILTIN, OUTPUT);
 
     #ifdef ARDUINO_RASPBERRY_PI_PICO
-        pinMode(23, OUTPUT);
-        digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+        //pinMode(23, OUTPUT);
+        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
     #endif
 
     // Be sure to use pins labeled I2C0 for Wire and I2C1 for Wire1 on the pinout diagram for your board, otherwise it won’t work.

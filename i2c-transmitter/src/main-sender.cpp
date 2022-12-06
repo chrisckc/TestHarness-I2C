@@ -8,9 +8,12 @@
 #define DEBUG_PIN4 (4u)
 #define DEBUG_PIN5 (5u)
 
+//#define I2C_BAUDRATE 400000 // Set Clock to 400KHz (Fast Mode) (with 1k pullup resistors, actually runs at 365 KHz)
+#define I2C_BAUDRATE 1000000 // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
 #define SLAVE_PICO_ADDRESS 0x30
 #define I2C_SDA (6u)
 #define I2C_SCL (7u)
+
 
 #define PRINT_DEBUG_DATA false
 
@@ -58,22 +61,35 @@ void setup() {
     Serial.begin(921600); // Baud rate is ignored because pico has built in USB-UART
     // Wait for Serial Comms or Timeout after 5 seconds
     while (!Serial && millis() < 5000);
+    int startupDelay = 6;
+    for (int i = 1; i <= startupDelay; ++i) {
+        Serial.printf("Waiting %d seconds to start: %d\r\n", startupDelay, i);
+        sleep_ms(1000);
+    }
+    Serial.printf("\e[2J\e[H"); // clear screen and go to home position
+    Serial.printf("rp2040_chip_version: %d \r\n", rp2040_chip_version());
+    Serial.printf("rp2040_rom_version: %d \r\n", rp2040_rom_version());
+    Serial.printf("get_core_num: %u \r\n\r\n", get_core_num());
+
     pinMode(LED_BUILTIN, OUTPUT);
 
     #ifdef ARDUINO_RASPBERRY_PI_PICO
-        pinMode(23, OUTPUT);
-        digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+        //pinMode(23, OUTPUT);
+        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
     #endif
 
     // Be sure to use pins labeled I2C0 for Wire and I2C1 for Wire1 on the pinout diagram for your board, otherwise it won’t work.
     // For Wire (I2C0 on the Pico) default pins: PIN_WIRE0_SDA (4u) PIN_WIRE0_SCL  (5u)
     // For Wire1 (I2C1 on the Pico) default pins: PIN_WIRE1_SDA (26u), PIN_WIRE1_SCL (27u)
     // Change these pins before calling Wire1.begin() or Wire1.begin()
-    Wire1.setSDA(I2C_SDA);
-    Wire1.setSCL(I2C_SCL);
+    #ifdef ARDUINO_ARCH_MBED
+        // Arduino MBED core does not support setting the i2c pins like this
+    #else
+        Wire1.setSDA(I2C_SDA);
+        Wire1.setSCL(I2C_SCL);
+    #endif
     // Default clock is 100 KHz (with 1k pullup resistors, actually runs at 95.238 KHz)
-    Wire1.setClock(400000); // Set Clock to 400KHz (Fast Mode) (with 1k pullup resistors, actually runs at 365 KHz)
-    //Wire1.setClock(1000000); // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
+    Wire1.setClock(I2C_BAUDRATE);
     Wire1.begin();
 
     // Setup Debug output pins
@@ -86,7 +102,6 @@ void setup() {
     pinMode(DEBUG_PIN5, OUTPUT);
     digitalWrite(DEBUG_PIN5, debugPinInitialState);
 
-    delay(5000);
     Serial.println("Pi Pico i2c test data sender:\r\n");
     Serial.printf("Test Data1: %u floats = %u bytes\r\n", TEST_DATA1_SIZE, TEST_DATA1_SIZE * 4);
     for (int i = 0; i < TEST_DATA1_SIZE; i++) {
