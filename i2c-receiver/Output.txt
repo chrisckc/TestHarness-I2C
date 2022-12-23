@@ -137,3 +137,22 @@ dr1Count: 0066883 dr1SuccessCount: 0066144 dr1FailureCount: 0000739  1.3,1.4,1.5
 dr2Count: 0066883 dr2SuccessCount: 0066367 dr2FailureCount: 0000516
 dr1FailureRate:   1.1049145 percent
 dr2FailureRate:   0.7714965 percent
+
+
+
+400KHz  with latest Wire.cpp fixes
+SERIAL_DURING_I2C true
+
+Seconds: 0006471
+LoopRate: 0489875
+receiveRate: 0000010
+drCount: 0127852
+dr1Count: 0063925 dr1SuccessCount: 0063924 dr1FailureCount: 0000001  dr1MissingStartByteCount: 0000000
+dr2Count: 0063927 dr2SuccessCount: 0063924 dr2FailureCount: 0000003  dr2MissingStartByteCount: 0000001
+dr1FailureRate:   0.0015643 percent
+dr2FailureRate:   0.0046929 percent
+
+
+
+
+

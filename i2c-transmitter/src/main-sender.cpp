@@ -8,8 +8,8 @@
 #define DEBUG_PIN4 (4u)
 #define DEBUG_PIN5 (5u)
 
-//#define I2C_BAUDRATE 400000 // Set Clock to 400KHz (Fast Mode) (with 1k pullup resistors, actually runs at 365 KHz)
-#define I2C_BAUDRATE 1000000 // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
+#define I2C_BAUDRATE 400000 // Set Clock to 400KHz (Fast Mode) (with 1k pullup resistors, actually runs at 365 KHz)
+//#define I2C_BAUDRATE 1000000 // Set Clock to 1Mhz (Fast Mode Plus) (with 1k pullup resistors, actually runs at 868 KHz)
 #define SLAVE_PICO_ADDRESS 0x30
 #define I2C_SDA (6u)
 #define I2C_SCL (7u)

@@ -32,8 +32,8 @@
 static const uint I2C_SLAVE_SDA_PIN = PICO_DEFAULT_I2C_SDA_PIN; // 4
 static const uint I2C_SLAVE_SCL_PIN = PICO_DEFAULT_I2C_SCL_PIN; // 5
 static const uint I2C_SLAVE_ADDRESS = 0x30;
-//static const uint I2C_BAUDRATE = 400000; // 400 kHz
-static const uint I2C_BAUDRATE = 1000000; // 1 MHz
+static const uint I2C_BAUDRATE = 400000; // 400 kHz
+//static const uint I2C_BAUDRATE = 1000000; // 1 MHz
 
 #define PRINT_DEBUG_DATA false
 #define SERIAL_DURING_I2C true

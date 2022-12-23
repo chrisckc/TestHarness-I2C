@@ -11,6 +11,12 @@
 		},
 		{
 			"path": "i2c-receiver-sdk"
+		},
+		{
+			"path": "I2C_receiver-new"
+		},
+		{
+			"path": "I2c_sender-new"
 		}
 	],
 	"settings": {
