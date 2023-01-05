@@ -12,11 +12,12 @@
 #define DEBUG_PIN5 (5u)
 #define DEBUG_PIN_INITIAL_STATE (HIGH)
 
-// Serial data output and debugging options
+// Serial data output and debugging options:
 #define DEBUG_SERIAL_OUTPUT_SCROLLING (false) // If not scrolling the terminal position is reset using escape sequences, proper terminal emulator required
 #define DEBUG_SERIAL_OUTPUT_PAGE_LIMIT (0) // Set to zero to show all pages
-#define DEBUG_SERIAL_DURING_I2C_REQUEST (true) // Set to false to prevent USB Serial debug output during I2C data reception
-
+// Error control settings:
+#define DEBUG_SERIAL_DURING_I2C_REQUEST (false) // Set to false to prevent USB Serial debug output during I2C data reception, using USB serial during I2C reception causes data errors.
+// I2C Settings:
 #define I2C_INSTANCE i2c1 // i2c1 is Wire1 in Arduino-Pico, valid pins below must be used for each i2c instance
 #define I2C_MASTER_SDA_PIN (6u)
 #define I2C_MASTER_SCL_PIN (7u)
@@ -114,7 +115,7 @@ int sendBufferToSlave(uint8_t length) {
     sendCounter++;
     if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
         if (DEBUG_SERIAL_DURING_I2C_REQUEST) {
-            // If USB Serial is sent, it may still be on its way out of a FIFO while the code continues from from here onto the I2C request and read operation
+            // If USB Serial is sent here, it may still be on its way out of a FIFO while the code continues from from here onto the I2C request and read operation (requestBufferFromSlave() )
             Serial.printf("I2C Sender says: Output buffer page %u sent, buffer size: %03u \r\n", sendCounter, length);
         }
     }
@@ -227,7 +228,10 @@ void setup() {
 
     #ifdef ARDUINO_RASPBERRY_PI_PICO
         //pinMode(23, OUTPUT);
-        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin (PS) high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+    #elif ARDUINO_RASPBERRY_PI_PICO_W
+        //pinMode(33, OUTPUT); // On PicoW, the PS pin is connected to the wireless module GPIO2 which is mapped to pin 33 in Arduino-Pico
+        //digitalWrite(33, HIGH); // Set the SMPS Power Save pin (PS) high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
     #endif
 
     sleep_us(10); // delay so we can easily see the debug pulse

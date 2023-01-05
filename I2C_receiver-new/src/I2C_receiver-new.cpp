@@ -12,12 +12,13 @@
 #define DEBUG_PIN5 (9u)
 #define DEBUG_PIN_INITIAL_STATE (1)
 
-// Serial data output and debugging options
+// Serial data output and debugging options:
 #define DEBUG_SERIAL_OUTPUT_SCROLLING (false) // If not scrolling the terminal position is reset using escape sequences, proper terminal emulator required
 #define DEBUG_SERIAL_OUTPUT_PAGE_LIMIT (0) // Set to zero to show all pages
-#define DEBUG_SERIAL_DURING_I2C_RECEIVE (false)
-#define DEBUG_SERIAL_DURING_I2C_RESPONSE (true)
-
+// Error control settings:
+#define DEBUG_SERIAL_DURING_I2C_RECEIVE (false) // Set to false to prevent USB Serial debug output during I2C data reception, using USB serial during I2C reception causes data errors.
+#define DEBUG_SERIAL_DURING_I2C_RESPONSE (false) // Set to false to prevent USB Serial debug output during I2C response (sending data back to the master), using USB serial while responding causes data errors on the master.
+// I2C Settings:
 #define I2C_INSTANCE i2c0 // i2c0 is Wire in Arduino-Pico, valid pins below must be used for each i2c instance
 #define I2C_SLAVE_SDA_PIN (4u)
 #define I2C_SLAVE_SCL_PIN (5u)
@@ -84,19 +85,25 @@ void clearBuffer(uint8_t buf[], size_t len) {
 
 // onReceive interrupt Handler
 // Called when the I2C slave has received all of the data from the transmission
-// delay from end of transmission from master to this interrupt firing is about 230 uS
 void i2c_slave_recv(int byteCount) {
     digitalWrite(DEBUG_PIN2, LOW); // signal the start of the interrupt
+    // A single byte received is either a command from the master to request data, for example reading a data register from the slave device
+    // or for the purposes this test project, a prefix indicating the number of bytes that the sender (I2C master) is going to be send next
     if (byteCount == 1) {
-        bytesExpectedOrRequested = Wire.read();
+        if (Wire.available()) {
+            bytesExpectedOrRequested = Wire.read();
+        } else {
+            bytesExpectedOrRequested = 0;
+        }
+        // reset the request flags
         _i2cDataRequestInProgress = false;
         _byteRequestedIndex = 0;
         bytesSent = 0;
         digitalWrite(DEBUG_PIN2, HIGH); // signal the end of the interrupt
         return;
     }
-    // The data must be read inside the ISR, this is imposed by the way the Wire API is implemented in Arduino-Pico
-    // The Wire receive buffer is cleared after this ISR has completed.
+    // The data must be read from the receive buffer inside this handler, this is imposed by the way the Wire API is implemented in Arduino-Pico
+    // The Wire receive buffer is cleared inside onIRQ in Wire.cpp after this handler has completed, so is not available outside of this handler.
     int data = 0;
     while (Wire.available()) {
         data = Wire.read(); // returns -1 if no data is available, Wire.available() should prevent this though
@@ -186,7 +193,10 @@ void setup() {
 
     #ifdef ARDUINO_RASPBERRY_PI_PICO
         //pinMode(23, OUTPUT);
-        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+        //digitalWrite(23, HIGH); // Set the SMPS Power Save pin (PS) high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
+    #elif ARDUINO_RASPBERRY_PI_PICO_W
+        //pinMode(33, OUTPUT); // On PicoW, the PS pin is connected to the wireless module GPIO2 which is mapped to pin 33 in Arduino-Pico
+        //digitalWrite(33, HIGH); // Set the SMPS Power Save pin (PS) high, forcing the regulator into Pulse Width Modulation (PWM) mode, less output ripple
     #endif
 
     delayMicroseconds(10); // delay so we can easily see the debug pulse
@@ -217,8 +227,8 @@ void loop() {
         // digitalWrite(DEBUG_PIN3, LOW);
 
         // ================================================================
-        // IT IS NOT POSSIBLE TO READ FROM THE WIRE BUFFER OUTSIDE OF THE onReceive ISR!
-        // The receive buffer indexes used in the Wire implementation are reset
+        // IT IS NOT POSSIBLE TO READ FROM THE WIRE RECEIVE BUFFER OUTSIDE OF THE onReceive ISR!
+        // The receive buffer indexes used in the Wire.cpp implementation are reset
         // inside the onIRQ function in Wire.cpp after it calls the onReceive callback.
         // ================================================================
         // int data = 0, byteIndex = 0;
@@ -238,10 +248,14 @@ void loop() {
         //digitalWrite(DEBUG_PIN3, HIGH);
     }
     if (i2cDataReadFromWireBuffer && (i2cDataRequestCompleted || DEBUG_SERIAL_DURING_I2C_RESPONSE)) {
+        unsigned int bytesAvailableCopy = bytesAvailable;
+        unsigned int bytesExpectedOrRequestedCopy = bytesExpectedOrRequested;
         digitalWrite(LED_BUILTIN, HIGH); // turn on the LED
-        if (bytesAvailable == 0) {
+        if (bytesAvailableCopy == 0) {
             Serial.printf("ERROR!!! Received empty transmission from the Sender (master) page: %u bytesAvailable: %03u                              \r\n", receiveCounter, bytesAvailable);
         } else {
+            bytesAvailable = 0;
+            lastBytesExpected = bytesExpectedOrRequestedCopy;
             receiveCounter++;
             // Keep track of seconds since start
             currentMillis = millis();
@@ -273,23 +287,21 @@ void loop() {
                 Serial.printf("Data Received...                                                                \r\n");
 
                 // print data to the serial port
-                Serial.printf("I2C Receiver says: read page %u from the sender, received page size: %03u expected: %03u lastExpected: %03u \r\n", receiveCounter, bytesAvailable, bytesExpectedOrRequested, lastBytesExpected);
+                Serial.printf("I2C Receiver says: read page %u from the sender, received page size: %03u expected: %03u lastExpected: %03u \r\n", receiveCounter, bytesAvailableCopy, bytesExpectedOrRequestedCopy, lastBytesExpected);
                 // Write the input buffer out to the USB serial port
                 printBuffer(in_buf, BUF_LEN);
 
                 Serial.printf("I2C Receiver says: Verifying received data...                           \r\n");
-                if (bytesExpectedOrRequested != BUF_LEN) {
+                if (bytesExpectedOrRequestedCopy != BUF_LEN) {
                     receiveErrorCount++;
-                    Serial.printf("ERROR!!! page: %u bytesExpected: %03u should equal the Buffer Length: %03u                               \r\n", receiveCounter, bytesExpectedOrRequested, BUF_LEN);
+                    Serial.printf("ERROR!!! page: %u bytesExpected: %03u should equal the Buffer Length: %03u                               \r\n", receiveCounter, bytesExpectedOrRequestedCopy, BUF_LEN);
                 }
                 verifyErrorCount = verifyInBuffer(receiveCounter, false);
                 receivedBytesErrorCount += verifyErrorCount;
                 // Check that we only record the error once for each receive cycle
-                if (bytesExpectedOrRequested == BUF_LEN && verifyErrorCount > 0) receiveErrorCount++;
+                if (bytesExpectedOrRequestedCopy == BUF_LEN && verifyErrorCount > 0) receiveErrorCount++;
             }
             clearBuffer(in_buf, BUF_LEN);
-            lastBytesExpected = bytesExpectedOrRequested;
-            bytesAvailable = 0;
             digitalWrite(DEBUG_PIN3, HIGH);
         }
         // Reset the flag
@@ -297,6 +309,7 @@ void loop() {
         digitalWrite(LED_BUILTIN, LOW); // turn off the LED
     }
     if (!i2cDataReadFromWireBuffer && i2cDataRequested && (i2cDataRequestCompleted || DEBUG_SERIAL_DURING_I2C_RESPONSE)) {
+        unsigned int bytesExpectedOrRequestedCopy = bytesExpectedOrRequested;
         delayMicroseconds(10); // delay so we can easily see the debug pulse
         digitalWrite(DEBUG_PIN5, LOW);
 
@@ -305,25 +318,26 @@ void loop() {
             if (v > verifyErrorCount) Serial.printf("\n");
         }
         if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-            Serial.printf("I2C Receiver says: Responding to Request from the Sender (master) for the Output buffer... (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequested);
+            Serial.printf("I2C Receiver says: Responding to Request from the Sender (master) for the Output buffer... (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
         }
-        if (bytesExpectedOrRequested == BUF_LEN) {
+        if (bytesExpectedOrRequestedCopy == BUF_LEN) {
             Serial.printf("\r\n");
         } else {
             sendErrorCount++;
             if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-                Serial.printf("ERROR!!! Unexpected number of bytes requested by the Sender (master) for the Output buffer...  (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequested);
+                Serial.printf("ERROR!!! Unexpected number of bytes requested by the Sender (master) for the Output buffer...  (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
             }
         }
         // Reset the flag
         i2cDataRequested = false;
     }
     if (!i2cDataReadFromWireBuffer && !i2cDataRequested && i2cDataRequestCompleted) {
+        unsigned int bytesExpectedOrRequestedCopy = bytesExpectedOrRequested;
         sendCounter++;
         if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
             Serial.printf("I2C Receiver says: Responded to Request from the Sender (master) for the Output buffer  (page %u, bytesSent: %03u)          \r\n", sendCounter, bytesSent);
         }
-        if (bytesSent == bytesExpectedOrRequested) {
+        if (bytesSent == bytesExpectedOrRequestedCopy) {
             Serial.printf("\r\n");
         } else {
             sendErrorCount++;
