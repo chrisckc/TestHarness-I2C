@@ -506,5 +506,10 @@ void loop() {
         // 100 uS is around 10 bytes received from i2c at 1MHz, so while receiving 255 bytes we will have decent overlap for testing
         delayMicroseconds(100);
         Serial.print(".");
+    } else {
+        // if DEBUG_SERIAL_DURING_I2C_RECEIVE is false, we still need a delay here to allow the mutex's to work
+        // otherwise, at the top of loop we would be constantly grabbing the mutex and disabling interrupts
+        // due to the repeated calls to readBool(&i2cDataReady)
+        delayMicroseconds(100);
     }
 }
