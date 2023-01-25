@@ -47,7 +47,9 @@
 			"tuple": "cpp",
 			"cmath": "cpp",
 			"*.old": "cpp",
-			"random": "cpp"
+			"random": "cpp",
+			"memory": "cpp",
+			"ranges": "cpp"
 		}
 	}
 }

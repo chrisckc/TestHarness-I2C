@@ -38,12 +38,13 @@ unsigned int seconds = 0, lastSeconds = 0;
 unsigned int loopCounter = 0, lastLoopCounter = 0;
 unsigned int receiveCounter = 0, lastReceiveCount = 0, receiveRate = 0, receiveErrorCount = 0, incompleteReceiveCount = 0, sendErrorCount = 0;
 unsigned int receivedBytesErrorCount = 0;
+bool bufferRequested = false;
 
 volatile bool i2cDataReady = false;
 volatile unsigned int  bytesAvailable = 0, bytesRequested = 0;
 
 void printBuffer(uint8_t buf[], size_t len) {
-    int i;
+    unsigned int i;
     for (i = 0; i < len; ++i) {
         if (i % 16 == 15)
             Serial.printf("%02X \r\n", buf[i]);
@@ -75,7 +76,7 @@ bool verifyInBuffer(unsigned int page, bool printOnlyFirstError) {
 }
 
 void clearBuffer(uint8_t buf[], size_t len) {
-    for (int i = 0; i < len; ++i) {
+    for (unsigned int i = 0; i < len; ++i) {
         buf[i] = 0;
     }
 }
@@ -85,6 +86,7 @@ int sendBufferToSlave(uint8_t length) {
         Serial.printf("I2C Sender says: Sending Output buffer to Receiver (slave Pico)...  (page %u, buffer size: %03u) \r\n", sendCounter, length);
     }
     digitalWrite(DEBUG_PIN3, LOW);
+    sendCounter++;
     // First send the data length of the buffer so the i2c slave knows what to expect next
     Wire1.beginTransmission(I2C_SLAVE_ADDRESS);
     // The Write function only works if an ACK was received from the transmission of the address by beginTransmission(address)
@@ -112,7 +114,6 @@ int sendBufferToSlave(uint8_t length) {
         return 0;
     }
     digitalWrite(DEBUG_PIN3, HIGH);
-    sendCounter++;
     if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
         if (DEBUG_SERIAL_DURING_I2C_REQUEST) {
             // If USB Serial is sent here, it may still be on its way out of a FIFO while the code continues from from here onto the I2C request and read operation (requestBufferFromSlave() )
@@ -149,10 +150,10 @@ int requestBufferFromSlave(uint8_t length) {
     // Now read the buffer that the Receiver (slave) should be sending back in response to the read Request
     // SDK method:
     //byteCount = i2c_read_timeout_us(I2C_INSTANCE, I2C_SLAVE_ADDRESS, in_buf, length, false, 1000 * 10); // set timeout to 10 ms
-    byteCount = Wire1.requestFrom(I2C_SLAVE_ADDRESS, length);
+    byteCount = Wire1.requestFrom(I2C_SLAVE_ADDRESS, length); // the timeout used by requestFrom is 1 second
     if (byteCount <= 0) {
         if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-            Serial.printf("I2C Sender says: ERROR!!! Could not read the Request for buffer page %u, return value: %d (Couldn't read from i2c slave, please check your wiring!) \r\n", sendCounter, byteCount);
+            Serial.printf("I2C Sender says: ERROR!!! Could not Request buffer page %u, return value: %d (Couldn't read from i2c slave, please check your wiring!) \r\n", sendCounter, byteCount);
         }
         digitalWrite(DEBUG_PIN2, HIGH);
         return 0;
@@ -167,10 +168,13 @@ int requestBufferFromSlave(uint8_t length) {
     }
     digitalWrite(DEBUG_PIN2, HIGH);
     bytesAvailable = byteCount;
-    i2cDataReady = true;
-
-    if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-        Serial.printf("I2C Sender says: Buffer page %u read from the Receiver (slave Pico), received buffer size: %03u expected: %03u  \r\n", sendCounter, byteCount, length);
+    if (byteCount > 0) {
+        i2cDataReady = true;
+        if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
+            Serial.printf("I2C Sender says: Buffer page %u read from the Receiver (slave Pico), received buffer size: %03u expected: %03u  \r\n", sendCounter, byteCount, length);
+        }
+    } else {
+        Serial.printf("I2C Sender says: ERROR!!! Could not read Buffer page %u read from the Receiver (slave Pico)  \r\n", sendCounter);
     }
     return byteCount;
 }
@@ -186,11 +190,13 @@ static void setupMaster() {
     // For Wire (I2C0 on the Pico) default pins: PIN_WIRE0_SDA (4u) PIN_WIRE0_SCL  (5u)
     // For Wire1 (I2C1 on the Pico) default pins: PIN_WIRE1_SDA (26u), PIN_WIRE1_SCL (27u)
     // Change these pins before calling Wire1.begin() or Wire1.begin()
-    #ifdef ARDUINO_ARCH_MBED
-        // Arduino MBED core does not support setting the i2c pins like this
-    #else
+    #ifdef ARDUINO_ARCH_RP2040
         Wire1.setSDA(I2C_MASTER_SDA_PIN);
         Wire1.setSCL(I2C_MASTER_SCL_PIN);
+    #elif ARDUINO_ARCH_MBED
+        // Arduino MBED core does not support setting the i2c pins like this
+    #else
+        // Use default pins
     #endif
     // Default clock is 100 KHz (with 1k pullup resistors, actually runs at 95.238 KHz)
     Wire1.setClock(I2C_BAUDRATE);
@@ -209,9 +215,11 @@ void setup() {
     Serial.printf("\e[2J\e[H"); // clear screen and go to home position
 
     Serial.printf("I2C Sender Arduino-Pico example using i2c baud rate: %d \r\n", I2C_BAUDRATE);
-    Serial.printf("rp2040_chip_version: %u \r\n", rp2040_chip_version());
-    Serial.printf("rp2040_rom_version: %u \r\n", rp2040_rom_version());
-    Serial.printf("get_core_num: %u \r\n", get_core_num());
+    #ifdef ARDUINO_ARCH_RP2040
+        Serial.printf("rp2040_chip_version: %u \r\n", rp2040_chip_version());
+        Serial.printf("rp2040_rom_version: %u \r\n", rp2040_rom_version());
+        Serial.printf("get_core_num: %u \r\n", get_core_num());
+    #endif
     Serial.printf("DEBUG_SERIAL_DURING_I2C_REQUEST: %s \r\n\r\n", DEBUG_SERIAL_DURING_I2C_REQUEST ? "true" : "false");
 
     // Init the onboard LED
@@ -251,7 +259,7 @@ void setup() {
     Serial.printf("I2C Sender says: The value: 0x%02X (%u) (buffer size) followed immediately by the buffer printed below will be sent to the receiver every: %u ms\r\n", BUF_LEN, BUF_LEN, sendInterval);
     printBuffer(out_buf, BUF_LEN);
     Serial.printf("\r\n");
-    Serial.printf("The value 0x%02X (%u) is expected to be returned followed by a reversed version of the above buffer\r\n\r\n", BUF_LEN, BUF_LEN);
+    Serial.printf("The value 0x%02X (%u) is expected to be returned followed by a reversed version of the above buffer\r\n", BUF_LEN, BUF_LEN);
 
     startMillis = to_ms_since_boot(get_absolute_time());
 }
@@ -279,7 +287,7 @@ void loop() {
         lastSendMillis = currentMillis;
         digitalWrite(LED_BUILTIN, HIGH); // turn on the LED
         if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-            if ((receiveCounter + incompleteReceiveCount) < sendCounter) {
+            if (bufferRequested && (receiveCounter + incompleteReceiveCount) < sendCounter) {
                 incompleteReceiveCount++;
                 Serial.printf("ERROR!!! The page %u response was incomplete!!! bytesRequested: %03u and bytesAvailable: %03u should equal the Buffer Length: %03u\r\n", sendCounter, bytesRequested, bytesAvailable, BUF_LEN);
                 printBuffer(in_buf, BUF_LEN);
@@ -310,23 +318,25 @@ void loop() {
         }
         // Send the Buffer to the Receiver
         int bytesSent = sendBufferToSlave(BUF_LEN);
-        if (bytesSent < BUF_LEN) {
+        if (bytesSent == BUF_LEN) {
+            // When using Arduino-Pico, we need a delay here to allow time for the receiver to read the received data buffer from the Wire API
+            // for a 255 byte buffer this can take a bit of time
+            // If we send a request for data too soon, it messes up the receiver logic as implemented
+            // When using the SDK, this is not an issue as the receiver is responding to each byte received due to direct use of the receive ISR, so we already have the data where we want it at the end of the transmission.
+            delayMicroseconds(80);
+
+            // Request the buffer from the Receiver
+            bytesRequested = BUF_LEN;
+            int bytesReceived = requestBufferFromSlave(bytesRequested);
+            if (bytesReceived != bytesRequested) {
+                //receiveErrorCount++; // do this below instead
+            }
+            bufferRequested = true;
+            // The results are checked below, although they could be checked here instead.
+        } else {
+            bufferRequested = false;
             sendErrorCount++;
         }
-
-        // When using Arduino-Pico, we need a delay here to allow time for the receiver to read the received data buffer from the Wire API
-        // for a 255 byte buffer this can take a bit of time
-        // If we send a request for data too soon, it messes up the receiver logic as implemented
-        // When using the SDK, this is not an issue as the receiver is responding to each byte received due to direct use of the receive ISR, so we already have the data where we want it at the end of the transmission.
-        delayMicroseconds(80);
-
-        // Request the buffer from the Receiver
-        bytesRequested = BUF_LEN;
-        int bytesReceived = requestBufferFromSlave(bytesRequested);
-        if (bytesReceived != bytesRequested) {
-            //receiveErrorCount++; // do this below instead
-        }
-        // The results are checked below, although they could be checked here instead.
 
         digitalWrite(LED_BUILTIN, LOW); // turn off the LED
     }
