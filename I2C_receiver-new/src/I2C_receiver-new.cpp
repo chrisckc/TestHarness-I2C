@@ -3,7 +3,16 @@
 // I2C_Receiver
 
 #include <Arduino.h>
+#define USE_I2C_SDK (false) // Specify if we are using the Pico SDK version of I2C rather then the Wire API
+#if USE_I2C_SDK
+#include "hardware/i2c.h"
+#include "hardware/irq.h"
+// https://github.com/vmilea/pico_i2c_slave
+#include <i2c_fifo.h>
+#include <i2c_slave.h>
+#else
 #include <Wire.h>
+#endif
 
 // Debug Signal outputs
 #ifdef ARDUINO_ARCH_STM32
@@ -35,7 +44,7 @@
 #define SERIAL_PORT Serial // Serial output through USB-CDC
 
 // SERIAL_PORT data output and debugging options:
-#define USING_PICOPROBE
+//#define USING_PICOPROBE
 #ifdef USING_PICOPROBE
     #define SERIAL_PORT Serial1  // serial output through UART0
     #define SERIAL_PORT_BAUD 115200 // picoprobe expects 115200 baud from target pico (connected via target<UART0> --> picoprobe<UART1>)
@@ -48,6 +57,7 @@
 #define DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE (true) // Set to false to prevent USB SERIAL_PORT debug output during I2C response (sending data back to the master), using USB SERIAL_PORT while responding causes data errors on the master.
 
 // I2C Settings:
+
 #define I2C_INSTANCE i2c0 // i2c0 is Wire in Arduino-Pico, valid pins below must be used for each i2c instance
 #ifdef ARDUINO_ARCH_ESP32
     #define I2C_SLAVE_SDA_PIN (21u)
@@ -60,7 +70,7 @@
 //#define I2C_BAUDRATE      (400000u)  // 400 kHz
 #define I2C_BAUDRATE      (1000000u) // 1 MHz
 
-#define USE_SECOND_CORE (false)
+#define USE_SECOND_CORE (true)
 #if USE_SECOND_CORE
     #define USE_MUTEX // comment this out to disable mutex protections when using second core.
     auto_init_mutex(gpioMutex);
@@ -193,16 +203,99 @@ void clearBuffer(uint8_t buf[], size_t len) {
     }
 }
 
-// onReceive interrupt Handler
+#if USE_I2C_SDK
+// handler used by the I2C SDK functions
+// Our handler is called from the I2C ISR, so it must complete quickly. Blocking calls /
+// printing to stdio may interfere with interrupt handling.
+static void i2c_slave_handler(i2c_inst_t *i2c, i2c_slave_event_t event) {
+    #ifdef USE_MUTEX
+    mutex_enter_blocking(&sharedVarsMutex);  // Acquire the Mutex
+    #endif
+    switch (event) {
+    case I2C_SLAVE_RECEIVE: // master has written some data
+        gpio_put(DEBUG_PIN2, 0); // signal the start of the interrupt
+        _byte = i2c_read_byte(i2c);
+        _i2cDataReceiveInProgress = true;
+        if (_byteIndex == 1) {
+            in_buf[0] = _prevByte; // backfill the first buffer byte now that we have more than 1 byte received
+        }
+        if (_byteIndex > 0) {
+            in_buf[_byteIndex] = _byte; // fill the buffer
+        }
+        _prevByte = _byte;
+        _byteIndex++;
+        gpio_put(DEBUG_PIN2, 1); // signal the end of the interrupt
+        break;
+    case I2C_SLAVE_REQUEST: // master is requesting data
+        gpio_put(DEBUG_PIN4, 0); // signal the start of the interrupt
+        i2c_write_byte(i2c, out_buf[_byteRequestedIndex]); // send the requested data, the i2c_write_byte function is used in the example provided in the library
+        _i2cDataRequestInProgress = true;
+        if (_byteRequestedIndex == 0) i2cDataRequested = true; // only set this once at the start
+        _byteRequestedIndex++;
+        if (_byteRequestedIndex >= BUF_LEN) {
+            bytesSent += _byteRequestedIndex; // just roll-over the buffer
+            _byteRequestedIndex = 0;
+        }
+        gpio_put(DEBUG_PIN4, 1); // signal the end of the interrupt
+        break;
+    case I2C_SLAVE_FINISH: // master has signalled Stop / Restart
+        gpio_put(DEBUG_PIN3, 0); // signal the start of the interrupt
+        // check if this is a finish event due to a read request from the master
+        if (_i2cDataRequestInProgress) {
+            bytesSent += _byteRequestedIndex;
+            _byteRequestedIndex = 0;
+            _i2cDataRequestInProgress = false;
+            i2cDataRequestCompleted = true;
+        }
+        // check if this is a finish event due to a receive from the master
+        if (_i2cDataReceiveInProgress) {
+            // if we only received a single byte, this is the prefix or command byte indicating the size of the buffer to be transferred next from the master
+            // It can also be a command to indicate the size of the buffer the master wants to read back, serviced by the I2C_SLAVE_REQUEST case
+            if (_byteIndex == 1) {
+                bytesExpectedOrRequested = _byte; // this can also indicate the number of bytes requested
+                bytesSent = 0;
+            } else {
+                bytesAvailable = _byteIndex;
+                i2cDataReady = true;
+            }
+            _byteIndex = 0;
+            _i2cDataReceiveInProgress = false;
+        }
+        gpio_put(DEBUG_PIN3, 1); // signal the end of the interrupt
+        break;
+    default:
+        break;
+    }
+    #ifdef USE_MUTEX
+    mutex_exit(&sharedVarsMutex); // Release the Mutex
+    #endif
+}
+
+// uses https://github.com/vmilea/pico_i2c_slave
+static void setupSlave() {
+    gpio_init(I2C_SLAVE_SDA_PIN);
+    gpio_set_function(I2C_SLAVE_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SLAVE_SDA_PIN);
+
+    gpio_init(I2C_SLAVE_SCL_PIN);
+    gpio_set_function(I2C_SLAVE_SCL_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SLAVE_SCL_PIN);
+
+    i2c_init(I2C_INSTANCE, I2C_BAUDRATE);
+    // configure I2C_INSTANCE for slave mode
+    i2c_slave_init(I2C_INSTANCE, I2C_SLAVE_ADDRESS, &i2c_slave_handler);
+}
+#else
+// onReceive interrupt Handler, used by Wire API
 // Called when the I2C slave has received all of the data from the transmission
 void i2c_slave_recv(int byteCount) {
+    #ifdef USE_MUTEX
+    mutex_enter_blocking(&sharedVarsMutex);
+    #endif
     gpioWrite(DEBUG_PIN2, LOW, false); // signal the start of the interrupt
     // A single byte received is either a command from the master to request data, for example reading a data register from the slave device
     // or for the purposes this test project, a prefix indicating the number of bytes that the sender (I2C master) is going to be send next
     if (byteCount == 1) {
-        #ifdef USE_MUTEX
-        mutex_enter_blocking(&sharedVarsMutex);
-        #endif
         if (Wire.available()) {
             bytesExpectedOrRequested = Wire.read();
         } else {
@@ -210,13 +303,8 @@ void i2c_slave_recv(int byteCount) {
         }
         // reset the request flags
         bytesSent = 0;
-        #ifdef USE_MUTEX
-        mutex_exit(&sharedVarsMutex);
-        #endif
         _i2cDataRequestInProgress = false;
         _byteRequestedIndex = 0;
-        gpioWrite(DEBUG_PIN2, HIGH); // signal the end of the interrupt
-        return;
     } else if (byteCount > 1) {
         // The data must be read from the receive buffer inside this handler, this is imposed by the way the Wire API is implemented in Arduino-Pico
         // The Wire receive buffer is cleared inside onIRQ in Wire.cpp after this handler has completed, so is not available outside of this handler.
@@ -229,29 +317,26 @@ void i2c_slave_recv(int byteCount) {
                 _byteIndex++;
             }
         }
-        #ifdef USE_MUTEX
-        mutex_enter_blocking(&sharedVarsMutex);
-        #endif
         bytesAvailable = _byteIndex;
         i2cDataReady = true;
-        #ifdef USE_MUTEX
-        mutex_exit(&sharedVarsMutex);
-        #endif
         _byteIndex = 0;
     }
     gpioWrite(DEBUG_PIN2, HIGH, false); // signal the end of the interrupt
+    #ifdef USE_MUTEX
+    mutex_exit(&sharedVarsMutex);
+    #endif
 }
 
-// onRequest interrupt Handler
+// onRequest interrupt Handler, used by Wire API
 // The handler is called from the I2C ISR, so it must complete quickly. Blocking calls or
 // printing to SERIAL_PORT / stdio may interfere with interrupt handling.
 void i2c_slave_req() {
-    gpioWrite(DEBUG_PIN4, LOW, false); // signal the start of the interrupt
-    Wire.write(out_buf[_byteRequestedIndex]); // send the requested data to the sender (master), one byte per interrupt
-    _i2cDataRequestInProgress = true;
     #ifdef USE_MUTEX
     mutex_enter_blocking(&sharedVarsMutex);
     #endif
+    gpioWrite(DEBUG_PIN4, LOW, false); // signal the start of the interrupt
+    Wire.write(out_buf[_byteRequestedIndex]); // send the requested data to the sender (master), one byte per interrupt
+    _i2cDataRequestInProgress = true;
     if (_byteRequestedIndex == 0) i2cDataRequested = true; // only set this once at the start
     _byteRequestedIndex++;
 
@@ -265,12 +350,11 @@ void i2c_slave_req() {
         bytesSent += _byteRequestedIndex; // just roll-over the buffer
         _byteRequestedIndex = 0;
     }
+    gpioWrite(DEBUG_PIN4, HIGH, false); // signal the end of the interrupt
     #ifdef USE_MUTEX
     mutex_exit(&sharedVarsMutex);
     #endif
-    gpioWrite(DEBUG_PIN4, HIGH, false); // signal the end of the interrupt
 }
-
 // Uses Wire for I2C0 instance
 static void setupSlave() {
     // Be sure to use pins labeled I2C0 for Wire and I2C1 for Wire1 on the pinout diagram for your board, otherwise it won’t work.
@@ -303,6 +387,9 @@ static void setupSlave() {
     #endif
 
 }
+#endif // USE_I2C_SDK
+
+
 
 void setup() {
     // Setup SERIAL_PORT Comms
@@ -321,6 +408,7 @@ void setup() {
         SERIAL_PORT.printf("rp2040_rom_version: %u \r\n", rp2040_rom_version());
         SERIAL_PORT.printf("get_core_num: %u \r\n", get_core_num());
     #endif
+    SERIAL_PORT.printf("USE_I2C_SDK: %s \r\n", USE_I2C_SDK ? "true" : "false");
     SERIAL_PORT.printf("USE_SECOND_CORE: %s \r\n", USE_SECOND_CORE ? "true" : "false");
     SERIAL_PORT.printf("SERIAL_PORT_BAUD: %d \r\n", SERIAL_PORT_BAUD);
     SERIAL_PORT.printf("DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE: %s \r\n", DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE ? "true" : "false");
@@ -429,18 +517,18 @@ void loop() {
                 // Reset the previous terminal position if we are not scrolling the output
                 if (!DEBUG_SERIAL_PORT_OUTPUT_SCROLLING) {
                     SERIAL_PORT.printf("\e[H"); // move to the home position, at the upper left of the screen
-                    SERIAL_PORT.printf("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                    SERIAL_PORT.printf("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
                 }
                 // Print the header info
                 SERIAL_PORT.printf("\r\nSeconds: %07u.%03lu       \r\n", seconds, currentMillis - startMillis - (seconds * 1000));
                 SERIAL_PORT.printf("receiveCounter: %07u         \r\n", receiveCounter);
                 SERIAL_PORT.printf("receiveRate: %07u            \r\n", receiveRate);
                 SERIAL_PORT.printf("Receive errorCount: %03u         \r\n", receiveErrorCount);
-                //SERIAL_PORT.printf("Receive FailureRate: %11.7f percent  \r\n", 100.0f * receiveErrorCount / (receiveCounter > 0 ? receiveCounter : 1));
+                SERIAL_PORT.printf("Receive FailureRate: %11.7f percent  \r\n", 100.0f * receiveErrorCount / (receiveCounter > 0 ? receiveCounter : 1));
                 SERIAL_PORT.printf("receivedBytesErrorCount: %03u         \r\n", receivedBytesErrorCount);
                 SERIAL_PORT.printf("sendCounter: %07u             \r\n", sendCounter);
                 SERIAL_PORT.printf("Send errorCount: %03u             \r\n", sendErrorCount);
-                //SERIAL_PORT.printf("Send FailureRate: %11.7f percent  \r\n", 100.0f * sendErrorCount / (sendCounter > 0 ? sendCounter : 1));
+                SERIAL_PORT.printf("Send FailureRate: %11.7f percent  \r\n", 100.0f * sendErrorCount / (sendCounter > 0 ? sendCounter : 1));
                 SERIAL_PORT.printf("Data Received...                                                                \r\n");
 
                 // print data to the SERIAL_PORT port

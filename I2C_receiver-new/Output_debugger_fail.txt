@@ -1,0 +1,35 @@
+Reading symbols from /Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/I2C_receiver-new/.pio/build/pico/firmware.elf...
+PlatformIO Unified Debugger -> https://bit.ly/pio-debug
+PlatformIO: debug_tool = picoprobe
+PlatformIO: Initializing remote target...
+Open On-Chip Debugger 0.10.0+dev-ge3428fadb-dirty (2021-07-03-09:33)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : only one transport option; autoselect 'swd'
+Warn : Transport "swd" was already selected
+adapter speed: 5000 kHz
+
+Info : Hardware thread awareness created
+Info : Hardware thread awareness created
+Info : RP2040 Flash Bank Command
+adapter speed: 1000 kHz
+
+Info : tcl server disabled
+Info : telnet server disabled
+Info : clock speed 1000 kHz
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x10000001
+Info : rp2040.core0: hardware has 4 breakpoints, 2 watchpoints
+Info : rp2040.core1: hardware has 4 breakpoints, 2 watchpoints
+Info : starting gdb server for rp2040.core0 on pipe
+Info : accepting 'gdb' connection from pipe
+target halted due to debug-request, current mode: Thread
+xPSR: 0x61000000 pc: 0x1000475e msp: 0x20040ff0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x100045ce msp: 0x20041f28
+Info : RP2040 B0 Flash Probe: 2097152 bytes @10000000, in 512 sectors
+
+Info : New GDB Connection: 1, Target rp2040.core0, state: halted

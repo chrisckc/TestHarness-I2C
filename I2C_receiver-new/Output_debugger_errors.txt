@@ -1,0 +1,305 @@
+Reading symbols from /Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/I2C_receiver-new/.pio/build/pico/firmware.elf...
+PlatformIO Unified Debugger -> https://bit.ly/pio-debug
+PlatformIO: debug_tool = picoprobe
+PlatformIO: Initializing remote target...
+Open On-Chip Debugger 0.10.0+dev-ge3428fadb-dirty (2021-07-03-09:33)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : only one transport option; autoselect 'swd'
+Warn : Transport "swd" was already selected
+adapter speed: 5000 kHz
+
+Info : Hardware thread awareness created
+Info : Hardware thread awareness created
+Info : RP2040 Flash Bank Command
+adapter speed: 1000 kHz
+
+Info : tcl server disabled
+Info : telnet server disabled
+Info : clock speed 1000 kHz
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x10000001
+Info : rp2040.core0: hardware has 4 breakpoints, 2 watchpoints
+Info : rp2040.core1: hardware has 4 breakpoints, 2 watchpoints
+Info : starting gdb server for rp2040.core0 on pipe
+Info : accepting 'gdb' connection from pipe
+target halted due to debug-request, current mode: Thread
+xPSR: 0x61000000 pc: 0x10004c2c msp: 0x20040ff0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x81000000 pc: 0x10006ba4 msp: 0x20041fc8
+Info : RP2040 B0 Flash Probe: 2097152 bytes @10000000, in 512 sectors
+
+Info : New GDB Connection: 1, Target rp2040.core0, state: halted
+0x10006ba4 in busy_wait_us_32 (delay_us=delay_us@entry=1000000) at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_timer/timer.c:62
+62	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_timer/timer.c: No such file or directory.
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+Loading section .boot2, size 0x100 lma 0x10000000
+Loading section .ota, size 0x25e8 lma 0x10000100
+Loading section .partition, size 0x918 lma 0x100026e8
+Loading section .text, size 0xe698 lma 0x10003000
+Loading section .rodata, size 0x134c lma 0x10011698
+Loading section .data, size 0xca0 lma 0x100129e4
+Info : Writing 79492 bytes starting at 0x0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+Start address 0x100030d4, load size 79492
+Transfer rate: 9 KB/sec, 8832 bytes/write.
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+[Switching to thread 1 (Thread 1)]
+#0  _entry_point () at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S:203
+203	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S: No such file or directory.
+PlatformIO: Initialization completed
+
+
+
+
+
+Reading symbols from /Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/I2C_receiver-new/.pio/build/pico/firmware.elf...
+PlatformIO Unified Debugger -> https://bit.ly/pio-debug
+PlatformIO: debug_tool = picoprobe
+PlatformIO: Initializing remote target...
+Open On-Chip Debugger 0.10.0+dev-ge3428fadb-dirty (2021-07-03-09:33)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : only one transport option; autoselect 'swd'
+Warn : Transport "swd" was already selected
+adapter speed: 5000 kHz
+
+Info : Hardware thread awareness created
+Info : Hardware thread awareness created
+Info : RP2040 Flash Bank Command
+adapter speed: 1000 kHz
+
+Info : tcl server disabled
+Info : telnet server disabled
+Info : clock speed 1000 kHz
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x10000001
+Info : rp2040.core0: hardware has 4 breakpoints, 2 watchpoints
+Info : rp2040.core1: hardware has 4 breakpoints, 2 watchpoints
+Info : starting gdb server for rp2040.core0 on pipe
+Info : accepting 'gdb' connection from pipe
+target halted due to debug-request, current mode: Thread
+xPSR: 0x61000000 pc: 0x1000475e msp: 0x20040ff0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x81000000 pc: 0x10006496 msp: 0x20041fc0
+Info : RP2040 B0 Flash Probe: 2097152 bytes @10000000, in 512 sectors
+
+Info : New GDB Connection: 1, Target rp2040.core0, state: halted
+0x10006496 in __dmb () at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_sync/include/hardware/sync.h:253
+253	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_sync/include/hardware/sync.h: No such file or directory.
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+Loading section .boot2, size 0x100 lma 0x10000000
+Loading section .ota, size 0x25e8 lma 0x10000100
+Loading section .partition, size 0x918 lma 0x100026e8
+Loading section .text, size 0xe5c8 lma 0x10003000
+Loading section .rodata, size 0x1384 lma 0x100115c8
+Loading section .data, size 0xc90 lma 0x1001294c
+Info : Writing 79324 bytes starting at 0x0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+Start address 0x100030d4, load size 79324
+Transfer rate: 13 KB/sec, 8813 bytes/write.
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+[Switching to thread 1 (Thread 1)]
+#0  _entry_point () at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S:203
+203	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S: No such file or directory.
+PlatformIO: Initialization completed
+target halted due to debug-request, current mode: Thread
+xPSR: 0x61000000 pc: 0x10004b58 msp: 0x20040ff0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x61000000 pc: 0x10004b58 msp: 0x20040ff0
+
+Thread
+1 received signal SIGINT, Interrupt.
+uart_write_blocking (len=1, src=0x20041f27 " $\017", uart=0x40034000) at /Users/chrisclaxton/.platformio/packages/framework-arduinopico/pico-sdk/src/rp2_common/hardware_uart/include/hardware/uart.h:301
+301	        while (!uart_is_writable(uart))
+Note: automatically using hardware breakpoints for read-only addresses.
+
+
+
+
+
+
+
+Reading symbols from /Users/chrisclaxton/Documents/PlatformIO/Projects/TestHarness-I2C/I2C_receiver-new/.pio/build/pico/firmware.elf...
+PlatformIO Unified Debugger -> https://bit.ly/pio-debug
+PlatformIO: debug_tool = picoprobe
+PlatformIO: Initializing remote target...
+Open On-Chip Debugger 0.10.0+dev-ge3428fadb-dirty (2021-07-03-09:33)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+Info : only one transport option; autoselect 'swd'
+Warn : Transport "swd" was already selected
+adapter speed: 5000 kHz
+
+Info : Hardware thread awareness created
+Info : Hardware thread awareness created
+Info : RP2040 Flash Bank Command
+adapter speed: 1000 kHz
+
+Info : tcl server disabled
+Info : telnet server disabled
+Info : clock speed 1000 kHz
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x10000001
+Info : rp2040.core0: hardware has 4 breakpoints, 2 watchpoints
+Info : rp2040.core1: hardware has 4 breakpoints, 2 watchpoints
+Info : starting gdb server for rp2040.core0 on pipe
+Info : accepting 'gdb' connection from pipe
+Info : RP2040 B0 Flash Probe: 2097152 bytes @10000000, in 512 sectors
+
+Info : New GDB Connection: 1, Target rp2040.core0, state: halted
+undefined debug reason 8 - target needs reset
+loop () at src/I2C_receiver-new.cpp:383
+383	    if (dataReady) {
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+Loading section .boot2, size 0x100 lma 0x10000000
+Loading section .ota, size 0x25e8 lma 0x10000100
+Loading section .partition, size 0x918 lma 0x100026e8
+Loading section .text, size 0xe5c8 lma 0x10003000
+Loading section .rodata, size 0x1384 lma 0x100115c8
+Loading section .data, size 0xc90 lma 0x1001294c
+Info : Writing 79324 bytes starting at 0x0
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0x01000000 pc: 0x00000184 msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+Start address 0x100030d4, load size 79324
+Transfer rate: 8 KB/sec, 8813 bytes/write.
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+target halted due to debug-request, current mode: Thread
+xPSR: 0xf1000000 pc: 0x000000ea msp: 0x20041f00
+[Switching to thread 1 (Thread 1)]
+#0  _entry_point () at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S:203
+203	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S: No such file or directory.
+PlatformIO: Initialization completed
+Note: automatically using hardware breakpoints for read-only addresses.
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
