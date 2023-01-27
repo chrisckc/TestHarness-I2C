@@ -1,0 +1,22 @@
+picoprobe debugging issues:
+
+[Switching to thread 1 (Thread 1)]
+#0  _entry_point () at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S:203
+203	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/pico_standard_link/crt0.S: No such file or directory.
+PlatformIO: Initialization completed
+
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
+Info : SWD DPIDR 0x0bc12477
+Info : SWD DLPIDR 0x00000001
+Error: Failed to read memory at 0xfffffffe
+
+
+
+Info : New GDB Connection: 1, Target rp2040.core0, state: halted
+busy_wait_us_32 (delay_us=delay_us@entry=1000000) at /home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_timer/timer.c:62
+62	/home/earle/Arduino/hardware/pico/rp2040/pico-sdk/src/rp2_common/hardware_timer/timer.c: No such file or directory.

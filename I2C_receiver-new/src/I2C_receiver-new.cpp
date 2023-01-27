@@ -11,30 +11,41 @@
     #define DEBUG_PIN3 (D3)
     #define DEBUG_PIN4 (D4)
     #define DEBUG_PIN5 (D5)
+    #define SERIAL_PORT_BAUD 230400
 #elseif ARDUINO_ARCH_ESP8266
     #define DEBUG_PIN2 (D5)
     #define DEBUG_PIN3 (D6)
     #define DEBUG_PIN4 (D7)
     #define DEBUG_PIN5 (D8)
+    #define SERIAL_PORT_BAUD 230400
 #elseif ARDUINO_ARCH_ESP32
     #define DEBUG_PIN2 (2u)
     #define DEBUG_PIN3 (4u)
     #define DEBUG_PIN4 (12u)
     #define DEBUG_PIN5 (13u)
+    #define SERIAL_PORT_BAUD 115200
 #else
     #define DEBUG_PIN2 (6u)
     #define DEBUG_PIN3 (7u)
     #define DEBUG_PIN4 (8u)
     #define DEBUG_PIN5 (9u)
+    #define SERIAL_PORT_BAUD 115200 // was 921600
 #endif
 #define DEBUG_PIN_INITIAL_STATE (HIGH)
+#define SERIAL_PORT Serial // Serial output through USB-CDC
 
-// Serial data output and debugging options:
-#define DEBUG_SERIAL_OUTPUT_SCROLLING (false) // If not scrolling the terminal position is reset using escape sequences, proper terminal emulator required
-#define DEBUG_SERIAL_OUTPUT_PAGE_LIMIT (0) // Set to zero to show all pages
+// SERIAL_PORT data output and debugging options:
+#define USING_PICOPROBE
+#ifdef USING_PICOPROBE
+    #define SERIAL_PORT Serial1  // serial output through UART0
+    #define SERIAL_PORT_BAUD 115200 // picoprobe expects 115200 baud from target pico (connected via target<UART0> --> picoprobe<UART1>)
+#endif
+
+#define DEBUG_SERIAL_PORT_OUTPUT_SCROLLING (false) // If not scrolling the terminal position is reset using escape sequences, proper terminal emulator required
+#define DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT (0) // Set to zero to show all pages
 // Error control settings:
-#define DEBUG_SERIAL_DURING_I2C_RECEIVE (true) // Set to false to prevent USB Serial debug output during I2C data reception, using USB serial during I2C reception causes data errors.
-#define DEBUG_SERIAL_DURING_I2C_RESPONSE (true) // Set to false to prevent USB Serial debug output during I2C response (sending data back to the master), using USB serial while responding causes data errors on the master.
+#define DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE (true) // Set to false to prevent USB SERIAL_PORT debug output during I2C data reception, using USB SERIAL_PORT during I2C reception causes data errors.
+#define DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE (true) // Set to false to prevent USB SERIAL_PORT debug output during I2C response (sending data back to the master), using USB SERIAL_PORT while responding causes data errors on the master.
 
 // I2C Settings:
 #define I2C_INSTANCE i2c0 // i2c0 is Wire in Arduino-Pico, valid pins below must be used for each i2c instance
@@ -49,8 +60,8 @@
 //#define I2C_BAUDRATE      (400000u)  // 400 kHz
 #define I2C_BAUDRATE      (1000000u) // 1 MHz
 
-#define USE_SECOND_CORE
-#ifdef USE_SECOND_CORE
+#define USE_SECOND_CORE (false)
+#if USE_SECOND_CORE
     #define USE_MUTEX // comment this out to disable mutex protections when using second core.
     auto_init_mutex(gpioMutex);
     auto_init_mutex(sharedVarsMutex);
@@ -150,14 +161,14 @@ void printBuffer(uint8_t buf[], size_t len) {
     unsigned int i;
     for (i = 0; i < len; ++i) {
         if (i % 16 == 15)
-            Serial.printf("%02X \r\n", buf[i]);
+            SERIAL_PORT.printf("%02X \r\n", buf[i]);
         else
-            Serial.printf("%02X ", buf[i]);
+            SERIAL_PORT.printf("%02X ", buf[i]);
     }
 
     // append trailing newline if there isn't one
     if (i % 16) {
-        Serial.printf("   \r\n");
+        SERIAL_PORT.printf("   \r\n");
     }
 }
 
@@ -166,9 +177,9 @@ unsigned int verifyInBuffer(unsigned int page, bool printOnlyFirstError) {
     for (uint8_t i = 0; i < BUF_LEN; ++i) {
         if (in_buf[i] != i + 1) {
             if (errorCount == 0 && printOnlyFirstError) {
-                Serial.printf("ERROR! page: %07u First Error at index: %03u expected: 0x%02X received: 0x%02X    \r\n", page, i, i + 1, in_buf[i]);
+                SERIAL_PORT.printf("ERROR! page: %07u First Error at index: %03u expected: 0x%02X received: 0x%02X    \r\n", page, i, i + 1, in_buf[i]);
             } else if (!printOnlyFirstError) {
-                Serial.printf("ERROR! page: %07u index: %03u expected: 0x%02X received: 0x%02X    \r\n", page, i, i + 1, in_buf[i]);
+                SERIAL_PORT.printf("ERROR! page: %07u index: %03u expected: 0x%02X received: 0x%02X    \r\n", page, i, i + 1, in_buf[i]);
             }
             errorCount++;
         }
@@ -233,7 +244,7 @@ void i2c_slave_recv(int byteCount) {
 
 // onRequest interrupt Handler
 // The handler is called from the I2C ISR, so it must complete quickly. Blocking calls or
-// printing to Serial / stdio may interfere with interrupt handling.
+// printing to SERIAL_PORT / stdio may interfere with interrupt handling.
 void i2c_slave_req() {
     gpioWrite(DEBUG_PIN4, LOW, false); // signal the start of the interrupt
     Wire.write(out_buf[_byteRequestedIndex]); // send the requested data to the sender (master), one byte per interrupt
@@ -294,31 +305,26 @@ static void setupSlave() {
 }
 
 void setup() {
-    // Setup Serial Comms
-    #ifdef ARDUINO_ARCH_STM32
-        Serial.begin(230400); // Max working speed via ST-Link
-    #elif ARDUINO_ARCH_ESP8266
-        Serial.begin(230400); // Max working speed
-    #elif ARDUINO_ESP32_DEV
-        Serial.begin(115200); // Max working speed
-    #else
-        Serial.begin(921600); // Baud rate is ignored because pico has built in USB-UART
-    #endif
+    // Setup SERIAL_PORT Comms
+    SERIAL_PORT.begin(SERIAL_PORT_BAUD); // Baud rate is ignored because pico has built in USB-UART
     int startupDelay = 9;
     for (int i = 1; i <= startupDelay; ++i) {
-        Serial.printf("Waiting %d seconds to start: %d\r\n", startupDelay, i);
-        delay(1000);
+        SERIAL_PORT.printf("Waiting %d seconds to start: %d\r\n", startupDelay, i);
+        //delay(1000);
+        busy_wait_ms(1000);
     }
-    Serial.printf("\e[2J\e[H"); // clear screen and go to home position
+    SERIAL_PORT.printf("\e[2J\e[H"); // clear screen and go to home position
 
-    Serial.printf("I2C receiver Arduino-Pico example using i2c baud rate: %d \r\n", I2C_BAUDRATE);
+    SERIAL_PORT.printf("I2C receiver Arduino-Pico example using i2c baud rate: %d \r\n", I2C_BAUDRATE);
     #ifdef ARDUINO_ARCH_RP2040
-        Serial.printf("rp2040_chip_version: %u \r\n", rp2040_chip_version());
-        Serial.printf("rp2040_rom_version: %u \r\n", rp2040_rom_version());
-        Serial.printf("get_core_num: %u \r\n", get_core_num());
+        SERIAL_PORT.printf("rp2040_chip_version: %u \r\n", rp2040_chip_version());
+        SERIAL_PORT.printf("rp2040_rom_version: %u \r\n", rp2040_rom_version());
+        SERIAL_PORT.printf("get_core_num: %u \r\n", get_core_num());
     #endif
-    Serial.printf("DEBUG_SERIAL_DURING_I2C_RECEIVE: %s \r\n", DEBUG_SERIAL_DURING_I2C_RECEIVE ? "true" : "false");
-    Serial.printf("DEBUG_SERIAL_DURING_I2C_RESPONSE: %s \r\n\r\n", DEBUG_SERIAL_DURING_I2C_RESPONSE ? "true" : "false");
+    SERIAL_PORT.printf("USE_SECOND_CORE: %s \r\n", USE_SECOND_CORE ? "true" : "false");
+    SERIAL_PORT.printf("SERIAL_PORT_BAUD: %d \r\n", SERIAL_PORT_BAUD);
+    SERIAL_PORT.printf("DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE: %s \r\n", DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE ? "true" : "false");
+    SERIAL_PORT.printf("DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE: %s \r\n\r\n", DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE ? "true" : "false");
 
     // Init the onboard LED
     pinMode(LED_BUILTIN, OUTPUT);
@@ -358,9 +364,9 @@ void setup() {
     }
     clearBuffer(in_buf, BUF_LEN);
 
-    Serial.printf("I2C Receiver says: After reading I2C data from RX, the value: 0x%02X (%u) (buffer size) and then the following buffer will be written to the sender:\r\n", BUF_LEN, BUF_LEN);
+    SERIAL_PORT.printf("I2C Receiver says: After reading I2C data from RX, the value: 0x%02X (%u) (buffer size) and then the following buffer will be written to the sender:\r\n", BUF_LEN, BUF_LEN);
     printBuffer(out_buf, BUF_LEN);
-    Serial.printf("\r\n");
+    SERIAL_PORT.printf("\r\n");
 
     startMillis = millis();
 }
@@ -373,7 +379,8 @@ void setup1() {
 
 void loop() {
     // Check if we have received data
-    if (readBool(&i2cDataReady)) {
+    dataReady = readBool(&i2cDataReady);
+    if (dataReady) {
         // gpioWrite(DEBUG_PIN3, LOW);
 
         // ================================================================
@@ -397,13 +404,13 @@ void loop() {
         //delayMicroseconds(10); // delay so we can easily see the debug pulse
         //gpioWrite(DEBUG_PIN3, HIGH);
     }
-    if (i2cDataReadFromWireBuffer && (readBool(&i2cDataRequestCompleted) || DEBUG_SERIAL_DURING_I2C_RESPONSE)) {
+    if (i2cDataReadFromWireBuffer && (readBool(&i2cDataRequestCompleted) || DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE)) {
         unsigned int bytesAvailableCopy = readUint(&bytesAvailable);
         unsigned int bytesExpectedOrRequestedCopy = readUint(&bytesExpectedOrRequested);
         gpioWrite(LED_BUILTIN, HIGH); // turn on the LED
         gpioWrite(DEBUG_PIN3, LOW);
         if (bytesAvailableCopy == 0) {
-            Serial.printf("ERROR!!! Received empty transmission from the Sender (master) page: %u bytesAvailable: %03u                              \r\n", receiveCounter, bytesAvailableCopy);
+            SERIAL_PORT.printf("ERROR!!! Received empty transmission from the Sender (master) page: %u bytesAvailable: %03u                              \r\n", receiveCounter, bytesAvailableCopy);
         } else {
             writeUint(&bytesAvailable, 0);
             lastBytesExpected = bytesExpectedOrRequestedCopy;
@@ -418,33 +425,33 @@ void loop() {
                 lastReceiveCount = receiveCounter;
             }
 
-            if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
+            if ((DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT
                 // Reset the previous terminal position if we are not scrolling the output
-                if (!DEBUG_SERIAL_OUTPUT_SCROLLING) {
-                    Serial.printf("\e[H"); // move to the home position, at the upper left of the screen
-                    Serial.printf("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                if (!DEBUG_SERIAL_PORT_OUTPUT_SCROLLING) {
+                    SERIAL_PORT.printf("\e[H"); // move to the home position, at the upper left of the screen
+                    SERIAL_PORT.printf("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
                 }
                 // Print the header info
-                Serial.printf("\r\nSeconds: %07u.%03lu       \r\n", seconds, currentMillis - startMillis - (seconds * 1000));
-                Serial.printf("receiveCounter: %07u         \r\n", receiveCounter);
-                Serial.printf("receiveRate: %07u            \r\n", receiveRate);
-                Serial.printf("Receive errorCount: %03u         \r\n", receiveErrorCount);
-                //Serial.printf("Receive FailureRate: %11.7f percent  \r\n", 100.0f * receiveErrorCount / (receiveCounter > 0 ? receiveCounter : 1));
-                Serial.printf("receivedBytesErrorCount: %03u         \r\n", receivedBytesErrorCount);
-                Serial.printf("sendCounter: %07u             \r\n", sendCounter);
-                Serial.printf("Send errorCount: %03u             \r\n", sendErrorCount);
-                //Serial.printf("Send FailureRate: %11.7f percent  \r\n", 100.0f * sendErrorCount / (sendCounter > 0 ? sendCounter : 1));
-                Serial.printf("Data Received...                                                                \r\n");
+                SERIAL_PORT.printf("\r\nSeconds: %07u.%03lu       \r\n", seconds, currentMillis - startMillis - (seconds * 1000));
+                SERIAL_PORT.printf("receiveCounter: %07u         \r\n", receiveCounter);
+                SERIAL_PORT.printf("receiveRate: %07u            \r\n", receiveRate);
+                SERIAL_PORT.printf("Receive errorCount: %03u         \r\n", receiveErrorCount);
+                //SERIAL_PORT.printf("Receive FailureRate: %11.7f percent  \r\n", 100.0f * receiveErrorCount / (receiveCounter > 0 ? receiveCounter : 1));
+                SERIAL_PORT.printf("receivedBytesErrorCount: %03u         \r\n", receivedBytesErrorCount);
+                SERIAL_PORT.printf("sendCounter: %07u             \r\n", sendCounter);
+                SERIAL_PORT.printf("Send errorCount: %03u             \r\n", sendErrorCount);
+                //SERIAL_PORT.printf("Send FailureRate: %11.7f percent  \r\n", 100.0f * sendErrorCount / (sendCounter > 0 ? sendCounter : 1));
+                SERIAL_PORT.printf("Data Received...                                                                \r\n");
 
-                // print data to the serial port
-                Serial.printf("I2C Receiver says: read page %u from the sender, received page size: %03u expected: %03u lastExpected: %03u \r\n", receiveCounter, bytesAvailableCopy, bytesExpectedOrRequestedCopy, lastBytesExpected);
-                // Write the input buffer out to the USB serial port
+                // print data to the SERIAL_PORT port
+                SERIAL_PORT.printf("I2C Receiver says: read page %u from the sender, received page size: %03u expected: %03u lastExpected: %03u \r\n", receiveCounter, bytesAvailableCopy, bytesExpectedOrRequestedCopy, lastBytesExpected);
+                // Write the input buffer out to the USB SERIAL_PORT port
                 printBuffer(in_buf, BUF_LEN);
 
-                Serial.printf("I2C Receiver says: Verifying received data...                           \r\n");
+                SERIAL_PORT.printf("I2C Receiver says: Verifying received data...                           \r\n");
                 if (bytesExpectedOrRequestedCopy != BUF_LEN) {
                     receiveErrorCount++;
-                    Serial.printf("ERROR!!! page: %u bytesExpected: %03u should equal the Buffer Length: %03u                               \r\n", receiveCounter, bytesExpectedOrRequestedCopy, BUF_LEN);
+                    SERIAL_PORT.printf("ERROR!!! page: %u bytesExpected: %03u should equal the Buffer Length: %03u                               \r\n", receiveCounter, bytesExpectedOrRequestedCopy, BUF_LEN);
                 }
                 verifyErrorCount = verifyInBuffer(receiveCounter, false);
                 receivedBytesErrorCount += verifyErrorCount;
@@ -458,24 +465,25 @@ void loop() {
         gpioWrite(LED_BUILTIN, LOW); // turn off the LED
         gpioWrite(DEBUG_PIN3, HIGH);
     }
-    if (!i2cDataReadFromWireBuffer && readBool(&i2cDataRequested) && (readBool(&i2cDataRequestCompleted) || DEBUG_SERIAL_DURING_I2C_RESPONSE)) {
+    if (!i2cDataReadFromWireBuffer && readBool(&i2cDataRequested) && (readBool(&i2cDataRequestCompleted) || DEBUG_SERIAL_PORT_DURING_I2C_RESPONSE)) {
         unsigned int bytesExpectedOrRequestedCopy = readUint(&bytesExpectedOrRequested);
-        delayMicroseconds(10); // delay so we can easily see the debug pulse
+        //delayMicroseconds(10); // delay so we can easily see the debug pulse
+        busy_wait_us(10);
         gpioWrite(DEBUG_PIN5, LOW);
 
         // Leave room for up to 4 previous error report lines not to be overwritten
         for (unsigned int v = 1; v <= 4; ++v) {
-            if (v > verifyErrorCount) Serial.printf("\n");
+            if (v > verifyErrorCount) SERIAL_PORT.printf("\n");
         }
-        if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-            Serial.printf("I2C Receiver says: Responding to Request from the Sender (master) for the Output buffer... (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
+        if ((DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT
+            SERIAL_PORT.printf("I2C Receiver says: Responding to Request from the Sender (master) for the Output buffer... (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
         }
         if (bytesExpectedOrRequestedCopy == BUF_LEN) {
-            Serial.printf("\r\n");
+            SERIAL_PORT.printf("\r\n");
         } else {
             sendErrorCount++;
-            if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-                Serial.printf("ERROR!!! Unexpected number of bytes requested by the Sender (master) for the Output buffer...  (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
+            if ((DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT
+                SERIAL_PORT.printf("ERROR!!! Unexpected number of bytes requested by the Sender (master) for the Output buffer...  (page %u, bytes requested: %03u) \r\n", receiveCounter, bytesExpectedOrRequestedCopy);
             }
         }
         // Reset the flag
@@ -485,31 +493,33 @@ void loop() {
         unsigned int bytesExpectedOrRequestedCopy = readUint(&bytesExpectedOrRequested);
         unsigned int bytesSentCopy = readUint(&bytesSent);
         sendCounter++;
-        if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-            Serial.printf("I2C Receiver says: Responded to Request from the Sender (master) for the Output buffer  (page %u, bytesSent: %03u)          \r\n", sendCounter, bytesSentCopy);
+        if ((DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT
+            SERIAL_PORT.printf("I2C Receiver says: Responded to Request from the Sender (master) for the Output buffer  (page %u, bytesSent: %03u)          \r\n", sendCounter, bytesSentCopy);
         }
         if (bytesSentCopy == bytesExpectedOrRequestedCopy) {
-            Serial.printf("\r\n");
+            SERIAL_PORT.printf("\r\n");
         } else {
             sendErrorCount++;
-            if ((DEBUG_SERIAL_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_OUTPUT_PAGE_LIMIT
-                Serial.printf("ERROR!!! Responding to Request from the Sender (master) for the Output buffer, buffer not completely sent  (page %u, bytesSent: %03u) \r\n", sendCounter, bytesSentCopy);
+            if ((DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT == 0) || (receiveCounter <= DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT)) { // optionally only show the results up to DEBUG_SERIAL_PORT_OUTPUT_PAGE_LIMIT
+                SERIAL_PORT.printf("ERROR!!! Responding to Request from the Sender (master) for the Output buffer, buffer not completely sent  (page %u, bytesSent: %03u) \r\n", sendCounter, bytesSentCopy);
             }
         }
         // Reset the flag
         writeBool(&i2cDataRequestCompleted, false);
-        //Serial.printf("                                                                                                                              \r\n");
+        //SERIAL_PORT.printf("                                                                                                                              \r\n");
         gpioWrite(DEBUG_PIN5, HIGH);
     }
-    if (DEBUG_SERIAL_DURING_I2C_RECEIVE && receiveCounter > 0) {
-        // Just keep printing something out of USB Serial every 100 uS, this will overlap with i2c receive.
+    if (DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE && receiveCounter > 0) {
+        // Just keep printing something out of USB SERIAL_PORT every 100 uS, this will overlap with i2c receive.
         // 100 uS is around 10 bytes received from i2c at 1MHz, so while receiving 255 bytes we will have decent overlap for testing
-        delayMicroseconds(100);
-        Serial.print(".");
+        //delayMicroseconds(100);
+        busy_wait_us(100);
+        SERIAL_PORT.print(".");
     } else {
-        // if DEBUG_SERIAL_DURING_I2C_RECEIVE is false, we still need a delay here to allow the mutex's to work
+        // if DEBUG_SERIAL_PORT_DURING_I2C_RECEIVE is false, we still need a delay here to allow the mutex's to work
         // otherwise, at the top of loop we would be constantly grabbing the mutex and disabling interrupts
         // due to the repeated calls to readBool(&i2cDataReady)
-        delayMicroseconds(100);
+        //delayMicroseconds(100);
+        busy_wait_us(100);
     }
 }
